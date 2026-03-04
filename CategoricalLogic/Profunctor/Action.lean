@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Category.Basic
 public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.Tactic.CategoryTheory.CategoryStar
 
-public import CategoricalLogic.Profunctor
+public import CategoricalLogic.Profunctor.Basic
 
 @[expose] public section
 
