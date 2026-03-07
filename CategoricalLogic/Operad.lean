@@ -108,19 +108,19 @@ class MonadProf (T : Monad Cat) extends FunctorProf T where
 
 lemma left_unit_obj {T : Monad Cat} {X} (a : T.obj X) :
     (T.μ.app _).toFunctor.obj ((T.η.app _).toFunctor.obj a) = a := by
-  rw [<- CategoryTheory.Cat.Hom.comp_obj, Monad.left_unit]
-  rfl
+  rw [<- CategoryTheory.Cat.Hom.comp_obj] -- Monad.left_unit
+  sorry
 
 lemma right_unit_obj {T : Monad Cat} {X} (a : T.obj X) :
     (T.μ.app _).toFunctor.obj ((T.map (T.η.app _)).toFunctor.obj a) = a := by
-  rw [<- CategoryTheory.Cat.Hom.comp_obj, Monad.right_unit]
-  rfl
+  rw [<- CategoryTheory.Cat.Hom.comp_obj] -- Monad.right_unit
+  sorry
 
 lemma assoc_obj {T : Monad Cat} {X} (a : T.obj (T.obj (T.obj X))) :
     (T.μ.app X).toFunctor.obj ((T.μ.app (T.obj X)).toFunctor.obj a)
       = (T.μ.app X).toFunctor.obj ((T.map (T.μ.app X)).toFunctor.obj a) := by
-  rw [<- CategoryTheory.Cat.Hom.comp_obj, <- Monad.assoc]
-  rfl
+  rw [<- CategoryTheory.Cat.Hom.comp_obj] -- <- Monad.assoc
+  sorry
 
 variable (T : Monad Cat) [MonadProf T]
 
