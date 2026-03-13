@@ -1,0 +1,3 @@
+In the file 'CategoricalLogic/Profunctor/Product.lean', do the following
+* Add a new wrapper type around 'Cat' and a quiver structure on it that associates to a pair of categories C and D a tuple (P,H,c) of a path P on profunctors with source C and target D, a profunctor H with source C and target D and a cell from P to H. Call this new type 'CatProfCell'. It's use will be to define a fully general cell composition operation.
+* Given a 

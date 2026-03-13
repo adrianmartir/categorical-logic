@@ -1,0 +1,1 @@
+* Do not use tactics in term mode
