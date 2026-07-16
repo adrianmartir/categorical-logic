@@ -3,15 +3,15 @@ Copyright (c) 2026 Adrian Marti. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
-module
 
-public import Mathlib.CategoryTheory.Category.Basic
-public import Mathlib.CategoryTheory.EqToHom
-public import Mathlib.Tactic.CategoryTheory.CategoryStar
 
-public import CategoricalLogic.Profunctor.Basic
+import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.EqToHom
+import Mathlib.Tactic.CategoryTheory.CategoryStar
 
-@[expose] public section
+import CategoricalLogic.Profunctor.Basic
+
+
 
 namespace CategoryTheory
 

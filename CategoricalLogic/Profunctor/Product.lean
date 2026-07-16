@@ -3,12 +3,12 @@ Copyright (c) 2026 Adrian Marti. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
-module
 
-public import CategoricalLogic.Profunctor.Basic
-public import Mathlib.CategoryTheory.Category.Cat
-public import Mathlib.Combinatorics.Quiver.Path
-public import Mathlib.Logic.Relation
+
+import CategoricalLogic.Profunctor.Basic
+import Mathlib.CategoryTheory.Category.Cat
+import Mathlib.Combinatorics.Quiver.Path
+import Mathlib.Logic.Relation
 
 /-!
 # Path Products and Tensor Products of Profunctors
@@ -45,7 +45,7 @@ from `C` to `D` (contravariant in `C`, covariant in `D`). This choice ensures th
 `PathProd` boundaries.
 -/
 
-@[expose] public section
+
 
 namespace CategoryTheory
 

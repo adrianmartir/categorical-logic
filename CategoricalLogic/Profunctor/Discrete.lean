@@ -3,10 +3,10 @@ Copyright (c) 2026 Adrian Marti. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
-module
 
-public import Mathlib.CategoryTheory.Discrete.Basic
-public import CategoricalLogic.Profunctor.Basic
+
+import Mathlib.CategoryTheory.Discrete.Basic
+import CategoricalLogic.Profunctor.Basic
 
 /-!
 ## Discrete Profunctors
@@ -29,7 +29,7 @@ We provide `@[simp]` lemmas for `map`, `mapL`, and `mapR` showing they reduce to
 results for natural transformations between discrete profunctors.
 -/
 
-@[expose] public section
+
 
 namespace CategoryTheory.Profunctor
 

@@ -3,11 +3,11 @@ Copyright (c) 2026 Adrian Marti. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
-module
 
-public import Mathlib.CategoryTheory.Category.Basic
-public import Mathlib.CategoryTheory.EqToHom
-public import Mathlib.Tactic.CategoryTheory.CategoryStar
+
+import Mathlib.CategoryTheory.Category.Basic
+import Mathlib.CategoryTheory.EqToHom
+import Mathlib.Tactic.CategoryTheory.CategoryStar
 
 /-!
 # Profunctors and Natural Transformations
@@ -19,7 +19,7 @@ Profunctors are defined as a structure with a mapping operation `map` that lets 
 of the profunctor at once. We also provide operations `mapL` and `mapR` to map only on one side.
 -/
 
-@[expose] public section
+
 
 namespace CategoryTheory
 

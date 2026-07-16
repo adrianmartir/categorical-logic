@@ -3,9 +3,9 @@ Copyright (c) 2026 Adrian Marti. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
-module
 
-public import CategoricalLogic.Profunctor.Basic
+
+import CategoricalLogic.Profunctor.Basic
 
 /-!
 # The Hom Profunctor
@@ -24,7 +24,7 @@ and covariant in the second, acting by pre- and post-composition.
 * `Profunctor.hom_mapR` — right mapping is postcomposition.
 -/
 
-@[expose] public section
+
 
 namespace CategoryTheory.Profunctor
 

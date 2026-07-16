@@ -4,20 +4,20 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti
 -/
 
-module
+
 
 -- import Mathlib.CategoryTheory.Prof
 -- import Mathlib.CategoryTheory.Category.Cat
 -- import Mathlib.CategoryTheory.Monad.Basic
-public import Mathlib.CategoryTheory.Operad.Basic
-public import Mathlib.CategoryTheory.Discrete.Basic
-public import Mathlib.CategoryTheory.Discrete.SumsProducts
+import Mathlib.CategoryTheory.Operad.Basic
+import Mathlib.CategoryTheory.Discrete.Basic
+import Mathlib.CategoryTheory.Discrete.SumsProducts
 
 /-!
 We construct the free T-operad on a profunctor, using a construction through terms.
 -/
 
-@[expose] public section
+
 
 namespace CategoryTheory
 

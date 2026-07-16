@@ -3,9 +3,9 @@ Copyright (c) 2026 Adrian Marti. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
-module
 
-public import CategoricalLogic.Profunctor.Product
+
+import CategoricalLogic.Profunctor.Product
 
 /-!
 # Cells of Profunctors
@@ -31,7 +31,7 @@ A cell from a path of profunctors to a target profunctor `K` consists of:
 
 -/
 
-@[expose] public section
+
 
 namespace CategoryTheory.Profunctor
 
