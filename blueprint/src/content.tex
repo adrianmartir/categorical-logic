@@ -5,3 +5,16 @@
 % If you want to split the blueprint content into several files then
 % the current file can be a simple sequence of \input. Otherwise It
 % can start with a \section or \chapter for instance.
+
+A quiver span $R$ is a span $Q \xrightarrow{} R \xleftarrow{} S$ between two quivers, but axiomatized via its fibers.
+
+We will think of the edges in the two quivers as vertices 
+
+-- Think of the edges in Q and R as proarrows.
+-- `arr` gives the type of arrows between two vertices.
+-- `square` gives the type of cells filling a square of arrows and proarrows
+
+\begin{definition}
+    \lean{QuiverSpan}
+    A quiver span between quivers $Q$ and $R$ consists of the following data: First, a type $R(x,y)$ of arrows for each vertex $x$ in $Q$ and for each vertex $y$ in $R$. Then, for each pair of edges $e : x \to x'$ and $e' : y \to y'$ in $Q$ and $R$, respectively and for arrows $f \in R(x,y)$ and $f' \in R(x',y')$, a type of squares $R(e,e',f,f')$.
+\end{definition}
