@@ -26,8 +26,7 @@ pp.piBinderTypes = true
 
 [[require]]
 name = "mathlib"
-git = "https://github.com/leanprover-community/mathlib4.git"
-rev = "v4.28.0"
+path = "../mathlib4"
 
 [[lean_lib]]
 name = "CategoricalLogic"
