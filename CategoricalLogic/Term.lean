@@ -6,10 +6,7 @@ Authors: Adrian Marti
 
 
 
--- import Mathlib.CategoryTheory.Prof
--- import Mathlib.CategoryTheory.Category.Cat
--- import Mathlib.CategoryTheory.Monad.Basic
-import Mathlib.CategoryTheory.Operad.Basic
+import CategoricalLogic.Operad
 import Mathlib.CategoryTheory.Discrete.Basic
 import Mathlib.CategoryTheory.Discrete.SumsProducts
 
@@ -27,9 +24,27 @@ open FunctorProf
 universe u
 
 def Prof.ofMat {X Y} (S : X → Y → Type u) : Prof (Cat.of (Discrete X)) (Cat.of (Discrete Y)) :=
-  Functor.prod (Discrete.opposite X).functor (Functor.id (Discrete Y))
-  ⋙ Discrete.productEquiv.inverse
-  ⋙ Discrete.functor (Function.uncurry S)
+  Profunctor.ofCore {
+    obj y x := S x.as y.as
+    map f g := TypeCat.ofHom fun h ↦
+      (Discrete.eq_of_hom f) ▸ (Discrete.eq_of_hom g) ▸ h
+    map_id _ _ := by ext; rfl
+    map_comp := by
+      rintro ⟨x₁⟩ ⟨x₂⟩ ⟨x₃⟩ ⟨y₁⟩ ⟨y₂⟩ ⟨y₃⟩ f f' g g'
+      obtain ⟨⟨hf⟩⟩ := f
+      obtain ⟨⟨hf'⟩⟩ := f'
+      obtain ⟨⟨hg⟩⟩ := g
+      obtain ⟨⟨hg'⟩⟩ := g'
+      change x₁ = x₂ at hf
+      change x₂ = x₃ at hf'
+      change y₁ = y₂ at hg
+      change y₂ = y₃ at hg'
+      subst x₂
+      subst x₃
+      subst y₂
+      subst y₃
+      ext
+      rfl }
 
 inductive Preterm {X} (S : Prof (T.obj X) X) : T.obj X → X → Type u where
 | base : {a : T.obj X} → {b : X} → S.app a b → Preterm S a b
@@ -39,7 +54,7 @@ inductive Preterm {X} (S : Prof (T.obj X) X) : T.obj X → X → Type u where
 
 
 def ring : T.obj (Cat.of (Discrete _root_.Unit)) → _root_.Unit → Type u :=
-  sorry
+  fun _ _ ↦ PUnit
 
 
 end CategoryTheory
