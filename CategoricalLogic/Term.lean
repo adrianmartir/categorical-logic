@@ -23,10 +23,11 @@ variable (T : Monad Cat) [MonadProf T]
 open FunctorProf
 universe u
 
-def Prof.ofMat {X Y} (S : X → Y → Type u) : Prof (Cat.of (Discrete X)) (Cat.of (Discrete Y)) :=
+def Profunctor.ofMat {X Y} (S : X → Y → Type u) :
+    Profunctor (Cat.of (Discrete Y)) (Cat.of (Discrete X)) :=
   Profunctor.ofCore {
     obj y x := S x.as y.as
-    map f g := TypeCat.ofHom fun h ↦
+    map f g := fun h ↦
       (Discrete.eq_of_hom f) ▸ (Discrete.eq_of_hom g) ▸ h
     map_id _ _ := by ext; rfl
     map_comp := by
@@ -46,7 +47,7 @@ def Prof.ofMat {X Y} (S : X → Y → Type u) : Prof (Cat.of (Discrete X)) (Cat.
       ext
       rfl }
 
-inductive Preterm {X} (S : Prof (T.obj X) X) : T.obj X → X → Type u where
+inductive Preterm {X : Cat} (S : Profunctor X (T.obj X)) : T.obj X → X → Type u where
 | base : {a : T.obj X} → {b : X} → S.app a b → Preterm S a b
 | cons : {a : T.obj X} → {b : X} → {c : (T.obj (T.obj X))} → {d : T.obj X} →
   (a ⟶ (((T.μ).app X).toFunctor.obj c)) → (mapProf.obj S).app c d →

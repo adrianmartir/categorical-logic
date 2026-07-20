@@ -37,6 +37,8 @@ end QuiverSpan
 TODO: This is work in progress, finish this using the api in `Mathlib.CategoryTheory.PathCategory.Basic` as much as possible.
 -/
 
+namespace Paths
+
 variable {V : Type*} [Quiver V]
 
 /-- The unit of the `Paths` monad: sends each edge to a singleton path. -/
@@ -96,11 +98,13 @@ theorem assoc {a b : Paths (Paths V)}
     exact (congrArg (fun q ↦ Quiver.Path.comp q (μ.map e)) ih).trans
       (flatten_comp (flatten p) e).symm
 
--- def Path : Functor Quiv Quiv where
---   obj Q := Q
---   map f :=
+/-! ### Path functor on spans -/
 
--- end QuiverSpan
+-- def mapQuiverSpan {S T : Type*} [Quiver S] [Quiver T] (s : QuiverSpan S T) :
+    -- QuiverSpan (Paths S) (Paths T) where
+
+
+end Paths
 
 -- def QuivSpan := Bundled Quiver
 

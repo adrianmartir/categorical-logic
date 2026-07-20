@@ -84,7 +84,7 @@ intermediate object `e` where the sub-path `p` meets `H`. -/
 def PathProd {C D : ProfCat.{v, u}} :
     Quiver.Path C D → D → C → Type (max u v)
   | .nil, d, c => ULift.{u} (d ⟶ c)
-  | @Quiver.Path.cons _ _ _ E _ p H, d, c => Σ (e : E), H.obj d e × PathProd p e c
+  | @Quiver.Path.cons _ _ _ E _ p H, d, c => Σ (e : E), H.app d e × PathProd p e c
 
 namespace PathProd
 
@@ -166,12 +166,16 @@ theorem mapL_mapR_comm {C D : ProfCat.{v, u}} {d d' : D} {c c' : C}
 This is a `Profunctor D C`, covariant in `D` (via `Profunctor.mapR`) and contravariant
 in `C` (via `Profunctor.mapL`). -/
 noncomputable def toProfunctor {C D : ProfCat.{v, u}}
-    (p : @Quiver.Path ProfCat _ C D) : Profunctor.{max u v} C D where
-  obj d c := PathProd p d c
-  map f g args := (args.mapR g).mapL f
-  map_id _ _ args := by simp
-  map_comp f' f g g' args := by
-    simp only [mapL_comp, mapR_comp, mapL_mapR_comm]
+    (p : @Quiver.Path ProfCat _ C D) : Profunctor.{max u v} C D :=
+  Profunctor.ofCore {
+    obj c d := PathProd p d c
+    map f g args := (args.mapR f).mapL g
+    map_id _ _ := by ext args; simp
+    map_comp f' f g g' := by
+      ext args
+      simp only [mapL_comp, mapR_comp]
+      congr 1
+      exact (mapL_mapR_comm (args.mapR f') f g').symm }
 
 /-- `Profunctor.mapL` on `toProfunctor` agrees with `PathProd.mapL`. -/
 @[simp]
@@ -229,13 +233,13 @@ inductive WedgeRel {C : ProfCat.{v, u}} :
     PathProd p d c → PathProd p d c → Prop where
   | junction {D E : ProfCat.{v, u}} {p : @Quiver.Path ProfCat _ C E}
       {H : E ⟶ D} {d : D} {c : C} {e e' : E}
-      (α : e' ⟶ e) (inner : PathProd p e c) (h : H.obj d e') :
+      (α : e' ⟶ e) (inner : PathProd p e c) (h : H.app d e') :
       @WedgeRel _ _ (.cons p H) d c
         ⟨e', h, (PathProd.toProfunctor p).mapL α inner⟩
         ⟨e, H.mapR α h, inner⟩
   | inner {D E : ProfCat.{v, u}} {p : @Quiver.Path ProfCat _ C E}
       {H : E ⟶ D} {d : D} {c : C} {e : E}
-      (h : H.obj d e) {x y : PathProd p e c} :
+      (h : H.app d e) {x y : PathProd p e c} :
       @WedgeRel C E p e c x y →
         @WedgeRel C D (.cons p H) d c ⟨e, h, x⟩ ⟨e, h, y⟩
 
@@ -281,8 +285,8 @@ theorem PathProd.mapL_preserves_wedgeRel {C D : ProfCat.{v, u}}
   | junction β inner hval =>
     simp only [PathProd.mapL]
     have key : Profunctor.mapL _ α (Profunctor.mapR _ β hval) =
-        Profunctor.mapR _ β (Profunctor.mapL _ α hval) := by
-      rw [← Profunctor.map_eq_mapR_mapL, ← Profunctor.map_eq_mapL_mapR]
+        Profunctor.mapR _ β (Profunctor.mapL _ α hval) :=
+      Profunctor.mapL_mapR_comm _ α β hval
     rw [key]
     exact WedgeRel.junction β inner (Profunctor.mapL _ α hval)
   | inner hval rel _ =>
@@ -298,39 +302,42 @@ of profunctor elements along the path `p`, where adjacent profunctors are identi
 via their shared boundary. -/
 def TensorProd {C D : ProfCat.{v, u}} (p : @Quiver.Path ProfCat _ C D)
     (d : D) (c : C) : Type (max u v) :=
-  Quotient (PathProd.setoid p d c)
+  _root_.Quotient (PathProd.setoid p d c)
 
 /-- The canonical map from `PathProd` to `TensorProd`. -/
 def TensorProd.mk {C D : ProfCat.{v, u}} {p : @Quiver.Path ProfCat _ C D}
     {d : D} {c : C} (args : PathProd p d c) : TensorProd p d c :=
-  Quotient.mk _ args
+  _root_.Quotient.mk _ args
 
 /-- The profunctor structure on the functor tensor product, inherited from `PathProd`.
 This is well-defined because `Profunctor.mapL` and `Profunctor.mapR` on `PathProd`
 preserve the wedge relation. -/
 noncomputable def TensorProd.toProfunctor {C D : ProfCat.{v, u}}
-    (p : @Quiver.Path ProfCat _ C D) : Profunctor.{max u v} C D where
-  obj d c := TensorProd p d c
-  map f g q := Quotient.lift
-    (fun args => Quotient.mk _ ((args.mapR g).mapL f))
+    (p : @Quiver.Path ProfCat _ C D) : Profunctor.{max u v} C D :=
+  Profunctor.ofCore {
+  obj c d := TensorProd p d c
+  map f g q := _root_.Quotient.lift
+    (fun args => _root_.Quotient.mk _ ((args.mapR f).mapL g))
     (by
       intro a b hab
-      apply Quotient.sound
+      apply _root_.Quotient.sound
       induction hab with
       | rel _ _ hr =>
         apply Relation.EqvGen.rel
         rw [← PathProd.toProfunctor_mapL, ← PathProd.toProfunctor_mapL,
             ← PathProd.toProfunctor_mapR, ← PathProd.toProfunctor_mapR]
-        exact PathProd.mapL_preserves_wedgeRel f (PathProd.mapR_preserves_wedgeRel g hr)
+        exact PathProd.mapL_preserves_wedgeRel g (PathProd.mapR_preserves_wedgeRel f hr)
       | refl _ => exact Relation.EqvGen.refl _
       | symm _ _ _ ih => exact Relation.EqvGen.symm _ _ ih
       | trans _ _ _ _ _ ih1 ih2 => exact Relation.EqvGen.trans _ _ _ ih1 ih2)
     q
-  map_id _ _ q := by
-    induction q using Quotient.ind
+  map_id _ _ := by
+    ext q
+    induction q using _root_.Quotient.ind
     simp [PathProd.mapR_id, PathProd.mapL_id]
-  map_comp f' f g g' q := by
-    induction q using Quotient.ind
-    simp [PathProd.mapL_comp, PathProd.mapR_comp, PathProd.mapL_mapR_comm]
+  map_comp f' f g g' := by
+    ext q
+    induction q using _root_.Quotient.ind
+    simp [PathProd.mapL_comp, PathProd.mapR_comp, PathProd.mapL_mapR_comm] }
 
 end CategoryTheory
