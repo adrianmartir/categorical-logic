@@ -1,0 +1,388 @@
+\begin{thebibliography}{FGHW08}
+
+\bibitem[Bar70]{RelationalAlgebras}
+Michael Barr.
+\newblock Relational algebras.
+\newblock {\em Lectures Notes in Mathematics 137: Reports of the Midwest
+  Category Seminar IV}, pages 39--55, 1970.
+
+\bibitem[Bat98]{batanin:monglob}
+M.~A. Batanin.
+\newblock Monoidal globular categories as a natural environment for the theory
+  of weak {$n$}-categories.
+\newblock {\em Adv. Math.}, 136(1):39--103, 1998.
+
+\bibitem[BD98]{bd:hda3}
+John~C. Baez and James Dolan.
+\newblock Higher-dimensional algebra. {III}. {$n$}-categories and the algebra
+  of opetopes.
+\newblock {\em Adv. Math.}, 135(2):145--206, 1998.
+
+\bibitem[BD01]{bd:fin-feyn}
+John~C. Baez and James Dolan.
+\newblock From finite sets to {F}eynman diagrams.
+\newblock In {\em Mathematics unlimited---2001 and beyond}, pages 29--50.
+  Springer, Berlin, 2001.
+
+\bibitem[Bec69]{beck:dl}
+Jon Beck.
+\newblock Distributive laws.
+\newblock In {\em Sem. on Triples and Categorical Homology Theory (ETH,
+  Z\"urich, 1966/67)}, pages 119--140. Springer, Berlin, 1969.
+
+\bibitem[B{\'{e}}n67]{benabou:bicats}
+Jean B{\'{e}}nabou.
+\newblock Introduction to bicategories.
+\newblock In {\em Reports of the Midwest Category Seminar}, pages 1--77.
+  Springer, 1967.
+
+\bibitem[BM03]{brgmoer:operads}
+Clemens Berger and Ieke Moerdijk.
+\newblock Axiomatic homotopy theory for operads.
+\newblock {\em Comment. Math. Helv.}, 78(4):805--831, 2003.
+
+\bibitem[BS76]{bs:dblgpd-xedmod}
+Ronald Brown and Christopher~B. Spencer.
+\newblock Double groupoids and crossed modules.
+\newblock {\em Cahiers Topologie G\'eom. Diff\'erentielle}, 17(4):343--362,
+  1976.
+
+\bibitem[Bur71]{burroni:t-cats}
+Albert Burroni.
+\newblock {$T$}-cat\'egories (cat\'egories dans un triple).
+\newblock {\em Cahiers Topologie G\'eom. Diff\'erentielle}, 12:215--321, 1971.
+
+\bibitem[BV73]{bv:htpy-invar}
+J.~M. Boardman and R.~M. Vogt.
+\newblock {\em Homotopy invariant algebraic structures on topological spaces}.
+\newblock Lecture Notes in Mathematics, Vol. 347. Springer-Verlag, Berlin,
+  1973.
+
+\bibitem[Che04]{cheng:opetopic}
+Eugenia Cheng.
+\newblock Weak n-categories: opetopic and multitopic foundations.
+\newblock {\em Journal of Pure and Applied Algebra}, 186(2):109 -- 137, 2004.
+
+\bibitem[CHT04]{OneSetting}
+M.~Clementino, D.~Hofmann, and W.~Tholen.
+\newblock One setting for all: metric, topology, uniformity, approach
+  structure.
+\newblock {\em Applied Categorical Structures}, 12:127--154, 2004.
+
+\bibitem[CJSV94]{cjsv:modulated-bicats}
+Aurelio Carboni, Scott Johnson, Ross Street, and Dominic Verity.
+\newblock Modulated bicategories.
+\newblock {\em J. Pure Appl. Algebra}, 94(3):229--282, 1994.
+
+\bibitem[CS10a]{cs:functoriality}
+G.~S.~H. Cruttwell and Michael~A.\ Shulman.
+\newblock On the functoriality of generalized multicategories.
+\newblock In preparation, 2010.
+
+\bibitem[CS10b]{cs:laxidem}
+G.~S.~H. Cruttwell and Michael~A.\ Shulman.
+\newblock Representability of generalized multicategories.
+\newblock In preparation, 2010.
+
+\bibitem[CT03]{CommonApproach}
+M.~Clementino and W.~Tholen.
+\newblock Metric, topology, and multicategory - a common approach.
+\newblock {\em J. Pure and Applied Algebra}, 153:13--47, 2003.
+
+\bibitem[DL07]{dl:lim-smallfr}
+Brian~J. Day and Stephen Lack.
+\newblock Limits of small functors.
+\newblock {\em J. Pure Appl. Algebra}, 210(3):651--663, 2007.
+
+\bibitem[DPP06]{dpp:paths-dbl}
+R.~Dawson, R.~Par{\'e}, and D.~A. Pronk.
+\newblock Paths in double categories.
+\newblock {\em Theory Appl. Categ.}, 16:No. 18, 460--521 (electronic), 2006.
+
+\bibitem[DPP07]{dpp:spans}
+R.~Dawson, R.~Par{\'e}, and D.~A. Pronk.
+\newblock Spans for 2-categories.
+\newblock In preparation; slides accessed May 2007 at
+  \url{http://www.mathstat.dal.ca/~selinger/ct2006/slides/CT06-Pare.pdf}, 2007.
+
+\bibitem[DS97]{ds:monbi-hopfagbd}
+Brian Day and Ross Street.
+\newblock Monoidal bicategories and {H}opf algebroids.
+\newblock {\em Adv. Math.}, 129(1):99--157, 1997.
+
+\bibitem[DS03]{ds:lmpo-conv}
+Brian Day and Ross Street.
+\newblock Lax monoids, pseudo-operads, and convolution.
+\newblock In {\em Diagrammatic morphisms and applications ({S}an {F}rancisco,
+  {CA}, 2000)}, volume 318 of {\em Contemp. Math.}, pages 75--96. Amer. Math.
+  Soc., Providence, RI, 2003.
+
+\bibitem[EK66]{ek:closed-cats}
+Samuel Eilenberg and G.~Max Kelly.
+\newblock Closed categories.
+\newblock In {\em Proc. Conf. Categorical Algebra (La Jolla, Calif., 1965)},
+  pages 421--562. Springer, New York, 1966.
+
+\bibitem[EM06]{em:rma-infloop}
+A.~D. Elmendorf and M.~A. Mandell.
+\newblock Rings, modules, and algebras in infinite loop space theory.
+\newblock {\em Adv. Math.}, 205(1):163--228, 2006.
+
+\bibitem[FGHW08]{fghw:gen-species}
+M.~Fiore, N.~Gambino, M.~Hyland, and G.~Winskel.
+\newblock The {C}artesian closed bicategory of generalised species of
+  structures.
+\newblock {\em J. Lond. Math. Soc. (2)}, 77(1):203--220, 2008.
+
+\bibitem[Gar08]{garner:polycats}
+Richard Garner.
+\newblock Polycategories via pseudo-distributive laws.
+\newblock {\em Adv. Math.}, 218(3):781--827, 2008.
+
+\bibitem[GP99]{gp:double-limits}
+Marco Grandis and Robert Par{\'e}.
+\newblock Limits in double categories.
+\newblock {\em Cahiers Topologie G\'eom. Diff\'erentielle Cat\'eg.},
+  XL(3):162--220, 1999.
+
+\bibitem[GP04]{gp:double-adjoints}
+Marco Grandis and Robert Par{\'e}.
+\newblock Adjoints for double categories.
+\newblock {\em Cah. Topol. G\'eom. Diff\'er. Cat\'eg.}, 45(3):193--240, 2004.
+
+\bibitem[Her00]{HermidaRepresentable}
+Claudio Hermida.
+\newblock Representable multicategories.
+\newblock {\em Advances in Mathematics}, 151:164--225, 2000.
+
+\bibitem[Her01]{HermidaCoherent}
+Claudio Hermida.
+\newblock From coherent structures to universal properties.
+\newblock {\em J. Pure and Applied Algebra}, 165:7--61, 2001.
+
+\bibitem[Joh02]{ptj:elephant1}
+Peter~T. Johnstone.
+\newblock {\em Sketches of an Elephant: A Topos Theory Compendium: Volume 1}.
+\newblock Number~43 in Oxford Logic Guides. Oxford Science Publications, 2002.
+
+\bibitem[Joy81]{joyal:species}
+Andr{\'e} Joyal.
+\newblock Une th\'eorie combinatoire des s\'eries formelles.
+\newblock {\em Adv. in Math.}, 42(1):1--82, 1981.
+
+\bibitem[Joy86]{joyal:funcan-species}
+Andr{\'e} Joyal.
+\newblock Foncteurs analytiques et esp\`eces de structures.
+\newblock In {\em Combinatoire \'enum\'erative ({M}ontreal, {Q}ue.,
+  1985/{Q}uebec, {Q}ue., 1985)}, volume 1234 of {\em Lecture Notes in Math.},
+  pages 126--159. Springer, Berlin, 1986.
+
+\bibitem[Kel72a]{kelly:abst-coh}
+G.~M. Kelly.
+\newblock An abstract approach to coherence.
+\newblock In {\em Coherence in categories}, pages 106--147. Lecture Notes in
+  Math., Vol. 281. Springer, Berlin, 1972.
+
+\bibitem[Kel72b]{kelly:mv-funct-calc}
+G.~M. Kelly.
+\newblock Many-variable functorial calculus. {I}.
+\newblock In {\em Coherence in categories}, pages 66--105. Lecture Notes in
+  Math., Vol. 281. Springer, Berlin, 1972.
+
+\bibitem[Kel82]{kelly:enr-lfp}
+G.~M. Kelly.
+\newblock Structures defined by finite limits in the enriched context. {I}.
+\newblock {\em Cahiers Topologie G\'eom. Diff\'erentielle}, 23(1):3--42, 1982.
+\newblock Third Colloquium on Categories, Part VI (Amiens, 1980).
+
+\bibitem[Kel92]{kelly:clubs}
+G.~M. Kelly.
+\newblock On clubs and data-type constructors.
+\newblock In {\em Applications of categories in computer science ({D}urham,
+  1991)}, volume 177 of {\em London Math. Soc. Lecture Note Ser.}, pages
+  163--190. Cambridge Univ. Press, Cambridge, 1992.
+
+\bibitem[Kel05]{kelly:operads}
+G.~M. Kelly.
+\newblock On the operads of {J}. {P}. {M}ay.
+\newblock {\em Repr. Theory Appl. Categ.}, (13):1--13 (electronic), 2005.
+
+\bibitem[KL97]{kl:property-like}
+G.~M. Kelly and Stephen Lack.
+\newblock On property-like structures.
+\newblock {\em Theory Appl. Categ.}, 3(9):213--250, 1997.
+
+\bibitem[KM95]{km:oamm}
+Igor K{\v{r}}{\'{\i}}{\v{z}} and J.~P. May.
+\newblock Operads, algebras, modules and motives.
+\newblock {\em Ast\'erisque}, (233):iv+145pp, 1995.
+
+\bibitem[Lac]{lack:icons}
+Stephen Lack.
+\newblock Icons.
+\newblock arXiv:0711.4657.
+
+\bibitem[Lam72]{lambek:dedsys-iii}
+Joachim Lambek.
+\newblock Deductive systems and categories. {III}. {C}artesian closed
+  categories, intuitionist propositional calculus, and combinatory logic.
+\newblock In {\em Toposes, algebraic geometry and logic ({C}onf., {D}alhousie
+  {U}niv., {H}alifax, {N}.{S}., 1971)}, pages 57--82. Lecture Notes in Math.,
+  Vol. 274. Springer, Berlin, 1972.
+
+\bibitem[Lam89]{lambek:multi-revis}
+J.~Lambek.
+\newblock Multicategories revisited.
+\newblock In {\em Categories in computer science and logic ({B}oulder, {CO},
+  1987)}, volume~92 of {\em Contemp. Math.}, pages 217--239. Amer. Math. Soc.,
+  Providence, RI, 1989.
+
+\bibitem[Law63]{lawvere:functsem}
+F.~William Lawvere.
+\newblock Functorial semantics of algebraic theories.
+\newblock {\em Proc. Nat. Acad. Sci. U.S.A.}, 50:869--872, 1963.
+
+\bibitem[Law02]{LawvereMetric}
+F.~W. Lawvere.
+\newblock Metric spaces, generalized logic and closed categories.
+\newblock {\em Reprints in Theory and Applications of Categories}, 1:1--37,
+  2002.
+
+\bibitem[Lei02]{GeneralizedEnrichmentofCategories}
+Tom Leinster.
+\newblock Generalized enrichment of categories.
+\newblock {\em J. Pure and Applied Algebra}, 168:391--406, 2002.
+
+\bibitem[Lei04]{leinster:higher-opds}
+Tom Leinster.
+\newblock {\em Higher operads, higher categories}, volume 298 of {\em London
+  Mathematical Society Lecture Note Series}.
+\newblock Cambridge University Press, Cambridge, 2004.
+
+\bibitem[Low88]{lowen:approach}
+R.~Lowen.
+\newblock {\em Approach Spaces: The Missing Link in the
+  Topology-Uniformity-Metric Triad}.
+\newblock Oxford Science Publications, 1988.
+
+\bibitem[LS02]{ls:ftm2}
+Stephen Lack and Ross Street.
+\newblock The formal theory of monads. {II}.
+\newblock {\em J. Pure Appl. Algebra}, 175(1-3):243--265, 2002.
+\newblock Special volume celebrating the 70th birthday of Professor Max Kelly.
+
+\bibitem[Man09]{manzyuk:closed}
+Oleksandr Manzyuk.
+\newblock Closed categories vs. closed multicategories.
+\newblock arXiv:0904.3137, 2009.
+
+\bibitem[May72]{may:goils}
+J.~Peter May.
+\newblock {\em The geometry of iterated loop spaces}.
+\newblock Springer-Verlag, Berlin, 1972.
+\newblock Lectures Notes in Mathematics, Vol. 271.
+
+\bibitem[Mor06]{morton:catalg-qm}
+Jeffrey Morton.
+\newblock Categorified algebra and quantum mechanics.
+\newblock {\em Theory Appl. Categ.}, 16:No. 29, 785--854 (electronic), 2006.
+
+\bibitem[Pen09]{penon:tcats-rep}
+Jacques Penon.
+\newblock T-cat\'egories repr\'esentables.
+\newblock {\em Theory Appl. Categ.}, 22(15):376--387, 2009.
+
+\bibitem[Pow99]{power:enr-theories}
+John Power.
+\newblock Enriched {L}awvere theories.
+\newblock {\em Theory Appl. Categ.}, 6:83--93 (electronic), 1999.
+\newblock The Lambek Festschrift.
+
+\bibitem[Sea05]{SealCanonical}
+Gavin~J. Seal.
+\newblock Canonical and op-canonical lax algebras.
+\newblock {\em Theory and Applications of Categories}, 14:221--243, 2005.
+
+\bibitem[Shu08]{FramedBicats}
+Michael Shulman.
+\newblock Framed bicategories and monoidal fibrations.
+\newblock {\em Theory and Applications of Categories}, 20:650--738, 2008.
+
+\bibitem[Shu10]{shulman:vequip}
+Michael~A.\ Shulman.
+\newblock Limits and completions in formal category theory.
+\newblock In preparation, 2010.
+
+\bibitem[SS08]{ss:extn-laxalg}
+Christoph Schubert and Gavin~J. Seal.
+\newblock Extensions in the theory of lax algebras.
+\newblock {\em Theory Appl. Categ.}, 21:No. 7, 118--151, 2008.
+
+\bibitem[Str72]{street:formalmonads}
+Ross Street.
+\newblock The formal theory of monads.
+\newblock {\em Journal of Pure and Applied Algebra}, 2:149--168, 1972.
+
+\bibitem[Str74a]{street:elem-cosmoi-i}
+Ross Street.
+\newblock Elementary cosmoi. {I}.
+\newblock In {\em Category Seminar (Proc. Sem., Sydney, 1972/1973)}, pages
+  134--180. Lecture Notes in Math., Vol. 420. Springer, Berlin, 1974.
+
+\bibitem[Str74b]{street:fib-yoneda-2cat}
+Ross Street.
+\newblock Fibrations and {Y}oneda's lemma in a {$2$}-category.
+\newblock In {\em Category Seminar (Proc. Sem., Sydney, 1972/1973)}, pages
+  104--133. Lecture Notes in Math., Vol. 420. Springer, Berlin, 1974.
+
+\bibitem[Str76]{street:catval-2lim}
+Ross Street.
+\newblock Limits indexed by category-valued {$2$}-functors.
+\newblock {\em J. Pure Appl. Algebra}, 8(2):149--181, 1976.
+
+\bibitem[Str80]{street:fibi}
+Ross Street.
+\newblock Fibrations in bicategories.
+\newblock {\em Cahiers Topologie G\'eom. Diff\'erentielle}, 21(2):111--160,
+  1980.
+
+\bibitem[Str83]{street:enr-cohom}
+Ross Street.
+\newblock Enriched categories and cohomology.
+\newblock In {\em Proceedings of the Symposium on Categorical Algebra and
+  Topology (Cape Town, 1981)}, volume~6, pages 265--283, 1983.
+\newblock Reprinted as Repr. Theory Appl. Categ. 14:1--18, 2005.
+
+\bibitem[Tho07]{tholen:coursenotes}
+Walter Tholen.
+\newblock Lax-algebraic methods in general topology.
+\newblock {\em Summer School on Contemporary Categorical Methods in Algebra and
+  Topology (course notes)}, 2007.
+
+\bibitem[Tho09]{tholen:ordered-topstruct}
+Walter Tholen.
+\newblock Ordered topological structures.
+\newblock {\em Topology Appl.}, 156(12):2148--2157, 2009.
+
+\bibitem[Ver92]{DomThesis}
+Dominic Verity.
+\newblock Enriched categories, internal categories, and change of base.
+\newblock {\em Cambridge University (PhD Thesis)}, 1992.
+
+\bibitem[Web05]{weber:operads}
+Mark Weber.
+\newblock Operads within monoidal pseudo algebras.
+\newblock {\em Appl. Categ. Structures}, 13(5-6):389--420, 2005.
+
+\bibitem[Web07]{weber:2toposes}
+Mark Weber.
+\newblock Yoneda structures from 2-toposes.
+\newblock {\em Appl. Categ. Structures}, 15(3):259--323, 2007.
+
+\bibitem[Woo82]{wood:proarrows-i}
+R.~J. Wood.
+\newblock Abstract proarrows. {I}.
+\newblock {\em Cahiers Topologie G\'eom. Diff\'erentielle}, 23(3):279--290,
+  1982.
+
+\end{thebibliography}
