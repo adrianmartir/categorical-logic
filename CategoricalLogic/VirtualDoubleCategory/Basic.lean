@@ -100,9 +100,23 @@ theorem assoc {a b : Paths (Paths V)}
 
 /-! ### Path functor on spans -/
 
--- def mapQuiverSpan {S T : Type*} [Quiver S] [Quiver T] (s : QuiverSpan S T) :
-    -- QuiverSpan (Paths S) (Paths T) where
+open Quiver
 
+variable {S T : Type*} [Quiver S] [Quiver T]
+
+structure ProArr (s : QuiverSpan S T)  where
+  src : S
+  tgt : T
+  arr : s.arr src tgt
+
+instance (s : QuiverSpan S T) : Quiver (ProArr s) where
+  Hom a a' := Σ (f : a.src ⟶ a'.src) (g : a.tgt ⟶ a'.tgt), s.square f g a.arr a'.arr
+
+-- Okay, just do this on the blueprint and then extend using AI
+-- def mapQuiverSpan (s : QuiverSpan S T) :
+--     QuiverSpan (Paths S) (Paths T) where
+--   arr x y := s.arr x y
+--   square f g a b := { p : Quiver.Path (ProArr.mk _ _ a) (ProArr.mk _ _ b) | True }
 
 end Paths
 

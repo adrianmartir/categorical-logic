@@ -6,7 +6,6 @@ Authors: Adrian Marti, Aristotle
 
 
 import CategoricalLogic.Profunctor.Basic
-import Mathlib.CategoryTheory.Category.Cat
 import Mathlib.Combinatorics.Quiver.Path
 import Mathlib.Logic.Relation
 
@@ -19,7 +18,7 @@ and the functor tensor product as the quotient by this relation.
 
 ## Main definitions
 
-* `ProfCat`: A wrapper around `Cat` with a quiver structure where edges are profunctors.
+* `ProfCat`: A wrapper around a category with a quiver structure where edges are profunctors.
 * `PathProd`: The product of profunctor values along a path of profunctors.
 * `WedgeRel`: An inductive relation on `PathProd` identifying tuples related by
   wedge conditions.
@@ -53,17 +52,18 @@ universe u v
 
 /-! ## The profunctor category -/
 
-/-- `ProfCat` is a wrapper around `Cat` equipped with a quiver structure where
-an edge from `C` to `D` is a profunctor `Profunctor D C`.
-
-While `Cat` uses functors as morphisms (and has a `Category` instance), `ProfCat`
-uses profunctors as edges (and only has a `Quiver` instance). -/
+/-- `ProfCat` bundles a type with a category structure and equips these bundled
+categories with profunctors as edges. -/
 structure ProfCat.{v', u'} where
-  /-- The underlying category. -/
-  toCat : Cat.{v', u'}
+  /-- The underlying type. -/
+  carrier : Type u'
+  /-- The category structure on the underlying type. -/
+  str : Category.{v'} carrier
 
 instance : CoeSort ProfCat.{v, u} (Type u) where
-  coe C := C.toCat
+  coe C := C.carrier
+
+attribute [instance] ProfCat.str
 
 /-- The quiver structure on `ProfCat`: an edge from `C` to `D` is a profunctor
 `Profunctor D C` (covariant in `D`, contravariant in `C`), representing a profunctor
