@@ -31,10 +31,12 @@ path = "../mathlib4"
 [[require]]
 name = "checkdecls"
 git = "https://github.com/PatrickMassot/checkdecls.git"
+rev = "3d425859e73fcfbef85b9638c2a91708ef4a22d4"
 
-[[require]]
-name = "«doc-gen4»"
-git = "https://github.com/leanprover/doc-gen4"
-rev = "main"
+# [[require]]
+# name = "«doc-gen4»"
+# git = "https://github.com/leanprover/doc-gen4"
+# rev = "main"
+
 [[lean_lib]]
 name = "CategoricalLogic"
