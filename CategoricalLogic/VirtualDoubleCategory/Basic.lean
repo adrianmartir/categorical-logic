@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import Mathlib.CategoryTheory.PathCategory.Basic
-import Mathlib.CategoryTheory.ConcreteCategory.Bundled
+import CategoricalLogic.VirtualDoubleCategory.Paths
+import Mathlib.CategoryTheory.Category.Quiv
 
 /-!
 # Virtual double categories
@@ -20,32 +20,6 @@ namespace CategoryTheory
 set_option autoImplicit true
 
 universe u v u₁ v₁ u₂ v₂ w z w' z'
-
-/-- Flatten a path of paths by concatenation.
-
-Defined through `Quiver.Path.rec` so that it reduces definitionally on `nil` and
-`cons`. -/
-def flattenPath {Q : Type u} [Quiver.{v} Q] {x y : Paths (Paths Q)}
-    (p : @Quiver.Path (Paths Q) _ x y) : @Quiver.Path Q _ x y :=
-  @Quiver.Path.rec (Paths Q) _ x (fun t _ => @Quiver.Path Q _ x t)
-    Quiver.Path.nil (fun {_ _} _ e ih => ih.comp e) y p
-
-/-- The multiplication of the paths monad, as a prefunctor. -/
-def pathsJoin (Q : Type u) [Quiver.{v} Q] : Paths (Paths Q) ⥤q Paths Q where
-  obj x := x
-  map := flattenPath
-
-/-- Flattening paths of singleton paths is the identity. -/
-theorem flattenPath_mapPath_of {Q : Type u} [Quiver.{v} Q] {x y : Q}
-    (p : Quiver.Path x y) :
-    flattenPath (@Prefunctor.mapPath Q _ (Paths Q) _ (Paths.of Q) x y p) = p := by
-  induction p with
-  | nil => rfl
-  | cons p e ih =>
-    change (flattenPath (@Prefunctor.mapPath Q _ (Paths Q) _ (Paths.of Q) _ _ p)).comp
-      (Quiver.Hom.toPath e) = _
-    rw [ih]
-    rfl
 
 /-- An elementwise span of quivers. `arr` are its apex vertices and `square` its apex edges. -/
 structure QuiverSpan (Q : Type u₁) (R : Type u₂) [Quiver.{v₁} Q] [Quiver.{v₂} R] where
@@ -63,6 +37,9 @@ notation:25 x " →ᵥ[" A "] " y => QuiverSpan.arr A x y
 
 variable {P Q R S : Type u} [Quiver.{u} P] [Quiver.{u} Q] [Quiver.{u} R] [Quiver.{u} S]
 
+/- # Basic operations for quivers, prefunctors and quiver spans -/
+
+/-- The identity quiver span. -/
 protected def id (Q : Type u) [Quiver.{v} Q] :
     QuiverSpan.{u, v, u, v, max u v, max u v} Q Q where
   arr x y := ULift.{max u v, 0} (PLift (x = y))
@@ -83,6 +60,7 @@ def whiskerRight {Q : Type u₁} {R : Type u₂} {S : Type u}
   arr x y := A.arr x (F.obj y)
   square e e' a b := A.square e (F.map e') a b
 
+/- Composition of quiver spans. -/
 protected def comp {Q : Type u₁} {R : Type u₂} {S : Type u}
     [Quiver.{v₁} Q] [Quiver.{v₂} R] [Quiver.{v} S]
     (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R)
@@ -92,57 +70,24 @@ protected def comp {Q : Type u₁} {R : Type u₂} {S : Type u}
   square e e' a b :=
     Σ m : a.1 ⟶ b.1, A.square e m a.2.1 b.2.1 × B.square m e' a.2.2 b.2.2
 
-structure Hom {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
-    (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R)
-    (B : QuiverSpan.{u₁, v₁, u₂, v₂, w', z'} Q R) where
-  map_arr {x : Q} {y : R} (a : A.arr x y) : B.arr x y
-  map_square {x x' : Q} {y y' : R} {e : x ⟶ x'} {e' : y ⟶ y'}
-    {a : A.arr x y} {b : A.arr x' y'} (s : A.square e e' a b) :
-      B.square e e' (map_arr a) (map_arr b)
-
-protected def Hom.id (A : QuiverSpan Q R) : Hom A A where
-  map_arr a := a
-  map_square s := s
-
-def Hom.comp {A B C : QuiverSpan Q R} (f : Hom A B) (g : Hom B C) : Hom A C where
-  map_arr a := g.map_arr (f.map_arr a)
-  map_square s := g.map_square (f.map_square s)
-
-def Hom.hcomp {Q : Type u₁} {R : Type u₂} {S : Type u}
-    [Quiver.{v₁} Q] [Quiver.{v₂} R] [Quiver.{v} S]
-    {A A' : QuiverSpan Q R} {B B' : QuiverSpan R S}
-    (f : Hom A A') (g : Hom B B') : Hom (.comp A B) (.comp A' B') where
-  map_arr a := ⟨a.1, f.map_arr a.2.1, g.map_arr a.2.2⟩
-  map_square s := ⟨s.1, f.map_square s.2.1, g.map_square s.2.2⟩
-
-def Hom.whiskerRight {Q R S : Type u} [Quiver.{u} Q] [Quiver.{u} R] [Quiver.{u} S]
-    (F : R ⥤q S) {A B : QuiverSpan Q S} (f : Hom A B) :
-    Hom (whiskerRight F A) (whiskerRight F B) where
-  map_arr a := f.map_arr a
-  map_square s := f.map_square s
-
-abbrev Unit (A : QuiverSpan Q Q) := Hom (.id Q) A
-
-/-- A map that composes pairs of vertical arrows and their filling squares.
-This is stated directly, without encoding the operation as a map out of a
-composite span. -/
-structure BiHom (A : QuiverSpan Q R) (B : QuiverSpan R S) (C : QuiverSpan Q S) where
-  map_arr {x : Q} {y : R} {z : S} (a : x →ᵥ[A] y) (b : y →ᵥ[B] z) : x →ᵥ[C] z
-  map_square {x x' : Q} {y y' : R} {z z' : S}
-    {e : x →ₕ x'} {m : y →ₕ y'} {f : z →ₕ z'}
-    {a : x →ᵥ[A] y} {a' : x' →ᵥ[A] y'}
-    {b : y →ᵥ[B] z} {b' : y' →ᵥ[B] z'}
-    (sa : A.square e m a a') (sb : B.square m f b b') :
-      C.square e f (map_arr a b) (map_arr a' b')
-
 /-- Cells filling a square whose vertical boundaries are quiver spans and whose
-horizontal boundaries are prefunctors. -/
-def Square {Q : Type u₁} {Q' : Type u₂} {R : Type w} {R' : Type w'}
-    [Quiver.{v₁} Q] [Quiver.{v₂} Q'] [Quiver.{z} R] [Quiver.{z'} R']
-    (A : QuiverSpan Q Q') (B : QuiverSpan R R') (F : Q ⥤q R) (G : Q' ⥤q R') :=
-  Hom A (whiskerRight G (whiskerLeft F B))
+horizontal boundaries are prefunctors.
+
+A morphism of quiver spans is the special case where both prefunctors are identities. -/
+structure Square {Q Q' R R' : Type*} [Quiver Q] [Quiver Q'] [Quiver R] [Quiver R']
+    (A : QuiverSpan Q Q') (B : QuiverSpan R R') (F : Q ⥤q R) (G : Q' ⥤q R') where
+  map_arr {x : Q} {y : Q'} (a : A.arr x y) : B.arr (F.obj x) (G.obj y)
+  map_square {x x' : Q} {y y' : Q'} {e : x ⟶ x'} {e' : y ⟶ y'}
+    {a : A.arr x y} {b : A.arr x' y'} (s : A.square e e' a b) :
+      B.square (F.map e) (G.map e') (map_arr a) (map_arr b)
 
 namespace Square
+
+/-- The identity square on a quiver span. -/
+protected def id {Q R : Type*} [Quiver Q] [Quiver R] (A : QuiverSpan Q R) :
+    Square A A (𝟭q Q) (𝟭q R) where
+  map_arr a := a
+  map_square s := s
 
 /-- Paste squares horizontally. -/
 def comp {Q Q' R R' S S' : Type*}
@@ -150,7 +95,7 @@ def comp {Q Q' R R' S S' : Type*}
     {A : QuiverSpan Q Q'} {B : QuiverSpan R R'} {C : QuiverSpan S S'}
     {F : Q ⥤q R} {G : Q' ⥤q R'} {H : R ⥤q S} {K : R' ⥤q S'}
     (s : Square A B F G) (t : Square B C H K) :
-    Square A C (Prefunctor.comp F H) (Prefunctor.comp G K) where
+    Square A C (F ⋙q H) (G ⋙q K) where
   map_arr a := t.map_arr (s.map_arr a)
   map_square a := t.map_square (s.map_square a)
 
@@ -165,15 +110,49 @@ def prod {Q₀ Q₁ Q₂ R₀ R₁ R₂ : Type*}
   map_arr a := ⟨F₁.obj a.1, s.map_arr a.2.1, t.map_arr a.2.2⟩
   map_square a := ⟨F₁.map a.1, s.map_square a.2.1, t.map_square a.2.2⟩
 
-/-- Change the target span of a square. -/
+/-- Change the target span of a square.
+
+This is `Square.comp` against a morphism of spans, but it lands in `Square A C F G` on the
+nose rather than in `Square A C (F ⋙q 𝟭q) (G ⋙q 𝟭q)`, which the recursions below need. -/
 def mapTarget {Q Q' R R' : Type*} [Quiver Q] [Quiver Q'] [Quiver R] [Quiver R']
     {A : QuiverSpan Q Q'} {B C : QuiverSpan R R'} {F : Q ⥤q R} {G : Q' ⥤q R'}
-    (s : Square A B F G) (h : Hom B C) : Square A C F G where
+    (s : Square A B F G) (h : Square B C (𝟭q R) (𝟭q R')) : Square A C F G where
   map_arr a := h.map_arr (s.map_arr a)
   map_square a := h.map_square (s.map_square a)
 
 end Square
 
+/-- Remove a right identity factor from a span product. -/
+def rightUnitHom {Q R : Type*} [Quiver Q] [Quiver R] (A : QuiverSpan Q R) :
+    Square (QuiverSpan.comp A (QuiverSpan.id R)) A (𝟭q Q) (𝟭q R) where
+  map_arr | ⟨_, a, ⟨⟨rfl⟩⟩⟩ => a
+  map_square {_ _ _ _ _ _ a b} := fun s =>
+    match a, b, s with
+    | ⟨_, _, ⟨⟨rfl⟩⟩⟩, ⟨_, _, ⟨⟨rfl⟩⟩⟩, ⟨_, t, ⟨⟨rfl⟩⟩⟩ => t
+
+/-- Reassociate three span products from left to right. -/
+def assocHom {P Q R S : Type*} [Quiver P] [Quiver Q] [Quiver R] [Quiver S]
+    (A : QuiverSpan P Q) (B : QuiverSpan Q R) (C : QuiverSpan R S) :
+    Square (QuiverSpan.comp (QuiverSpan.comp A B) C)
+      (QuiverSpan.comp A (QuiverSpan.comp B C)) (𝟭q P) (𝟭q S) where
+  map_arr a := ⟨a.2.1.1, a.2.1.2.1, a.1, a.2.1.2.2, a.2.2⟩
+  map_square s := ⟨s.2.1.1, s.2.1.2.1, s.1, s.2.1.2.2, s.2.2⟩
+
+abbrev Unit (A : QuiverSpan Q Q) := Square (.id Q) A (𝟭q Q) (𝟭q Q)
+
+/-- A map that composes pairs of vertical arrows and their filling squares.
+This is stated directly, without encoding the operation as a map out of a
+composite span. -/
+structure BiHom (A : QuiverSpan Q R) (B : QuiverSpan R S) (C : QuiverSpan Q S) where
+  map_arr {x : Q} {y : R} {z : S} (a : x →ᵥ[A] y) (b : y →ᵥ[B] z) : x →ᵥ[C] z
+  map_square {x x' : Q} {y y' : R} {z z' : S}
+    {e : x →ₕ x'} {m : y →ₕ y'} {f : z →ₕ z'}
+    {a : x →ᵥ[A] y} {a' : x' →ᵥ[A] y'}
+    {b : y →ᵥ[B] z} {b' : y' →ᵥ[B] z'}
+    (sa : A.square e m a a') (sb : B.square m f b b') :
+      C.square e f (map_arr a b) (map_arr a' b')
+
+/-- A string of horizontally composable squares. -/
 inductive PathSquare {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
     (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) :
     {x x' : Q} → {y y' : R} → Quiver.Path x x' → Quiver.Path y y' →
@@ -186,7 +165,7 @@ namespace PathSquare
 
 variable {Q R : Type u} [Quiver.{u} Q] [Quiver.{u} R]
 
-def map {A B : QuiverSpan Q R} (F : Hom A B) {x x' : Q} {y y' : R}
+def map {A B : QuiverSpan Q R} (F : Square A B (𝟭q Q) (𝟭q R)) {x x' : Q} {y y' : R}
     {p : Quiver.Path x x'} {q : Quiver.Path y y'} {a : A.arr x y} {b : A.arr x' y'} :
     PathSquare A p q a b → PathSquare B p q (F.map_arr a) (F.map_arr b)
   | .nil _ => .nil _
@@ -202,6 +181,7 @@ def comp {A : QuiverSpan Q R} {x x' x'' : Q} {y y' y'' : R}
 
 end PathSquare
 
+/-- Apply the `Paths` monad to a quiver span. -/
 def paths {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
     (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) :
     QuiverSpan.{u₁, max u₁ v₁, u₂, max u₂ v₂, w, max u₁ u₂ v₁ v₂ w z}
@@ -209,31 +189,115 @@ def paths {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
   arr x y := A.arr x y
   square p q a b := PathSquare A p q a b
 
-def pathsMap {A B : QuiverSpan Q R} (F : Hom A B) :
-    @Hom (Paths Q) (Paths R) _ _ (paths A) (paths B) where
+/-- Apply the `Paths` monad to a morphism of spans. -/
+def pathsMap {A B : QuiverSpan Q R} (F : Square A B (𝟭q Q) (𝟭q R)) :
+    Square (paths A) (paths B) (𝟭q (Paths Q)) (𝟭q (Paths R)) where
   map_arr a := F.map_arr a
   map_square s := PathSquare.map F s
 
-def pathsUnit (A : QuiverSpan Q R) :
-    Hom A (whiskerRight (Paths.of R) (whiskerLeft (Paths.of Q) (paths A))) where
-  map_arr a := a
-  map_square s := .cons (.nil _) s
+-- -- TODO: Unused
+-- def pathsUnit (A : QuiverSpan Q R) :
+--     Square A (whiskerRight (Paths.of R) (whiskerLeft (Paths.of Q) (paths A)))
+--       (𝟭q Q) (𝟭q R) where
+--   map_arr a := a
+--   map_square s := .cons (.nil _) s
 
-def PathSquare.flatten {A : QuiverSpan Q R} {x x' : Q} {y y' : R}
-    {pp : @Quiver.Path (Paths Q) _ x x'} {qq : @Quiver.Path (Paths R) _ y y'}
-    {a : A.arr x y} {b : A.arr x' y'} :
-    @PathSquare (Paths Q) (Paths R) _ _ (paths A) x x' y y' pp qq a b →
-      PathSquare A (flattenPath pp) (flattenPath qq) a b
-  | .nil _ => .nil _
-  | .cons s t => PathSquare.comp (PathSquare.flatten s) t
+-- def PathSquare.flatten {A : QuiverSpan Q R} {x x' : Q} {y y' : R}
+--     {pp : @Quiver.Path (Paths Q) _ x x'} {qq : @Quiver.Path (Paths R) _ y y'}
+--     {a : A.arr x y} {b : A.arr x' y'} :
+--     @PathSquare (Paths Q) (Paths R) _ _ (paths A) x x' y y' pp qq a b →
+--       PathSquare A (flattenPath pp) (flattenPath qq) a b
+--   | .nil _ => .nil _
+--   | .cons s t => PathSquare.comp (PathSquare.flatten s) t
 
-def pathsMul (A : QuiverSpan Q R) :
-    Hom (paths (paths A))
-      (whiskerRight (pathsJoin R) (whiskerLeft (pathsJoin Q) (paths A))) where
-  map_arr a := a
-  map_square s := PathSquare.flatten s
+-- -- TODO: Unused
+-- def pathsMul (A : QuiverSpan Q R) :
+--     Square (paths (paths A))
+--       (whiskerRight (pathsJoin R) (whiskerLeft (pathsJoin Q) (paths A)))
+--       (𝟭q (Paths (Paths Q))) (𝟭q (Paths (Paths R))) where
+--   map_arr a := a
+--   map_square s := PathSquare.flatten s
 
 end QuiverSpan
+
+/-! ### Quivers and spans as a quiver -/
+
+/-- Bundled quivers, to be equipped with the quiver structure whose edges are quiver
+spans. This is `CategoryTheory.Quiv` as a type synonym, so that it does not pick up the
+category structure whose morphisms are prefunctors. -/
+def SpanQuiv := Quiv.{u, v}
+
+namespace SpanQuiv
+
+instance : CoeSort SpanQuiv Type* where
+  coe C := C.α
+
+instance str' (C : SpanQuiv) : Quiver C := C.str
+
+/-- Quiver spans are the vertical arrows between bundled quivers. -/
+instance : Quiver SpanQuiv.{u, v} where
+  Hom x y := QuiverSpan x y
+
+/-- Compose the spans along a path of quivers. This is the path product needed by the
+multihom span.
+
+It is defined through `Quiver.Path.rec` (rather than the equation compiler) so that
+it reduces definitionally on `nil` and `cons`; this keeps the downstream
+constructions tactic-free. -/
+def pathProd {q q' : SpanQuiv.{u, v}} (p : Quiver.Path q q') : q ⟶ q' :=
+  p.rec (motive := fun t _ => q ⟶ t)
+    (QuiverSpan.id _) (fun _ e ih => QuiverSpan.comp ih e)
+
+@[simp] theorem pathProd_nil {q : SpanQuiv.{u, v}} :
+    pathProd (Quiver.Path.nil (a := q)) = QuiverSpan.id _ := rfl
+
+@[simp] theorem pathProd_cons {q q' q'' : SpanQuiv.{u, v}}
+    (p : Quiver.Path q q') (e : q' ⟶ q'') :
+    pathProd (p.cons e) = QuiverSpan.comp (pathProd p) e := rfl
+
+/-- The path product of a single edge is that edge, preceded by an identity span. -/
+theorem pathProd_toPath {q q' : SpanQuiv.{u, v}} (e : q ⟶ q') :
+    pathProd (Quiver.Hom.toPath e) = QuiverSpan.comp (QuiverSpan.id _) e := rfl
+
+/-- The diagonal cell over an edge `e`: identity prefunctors give a square from `e` to
+its own path product `pathProd (Quiver.Hom.toPath e)`. -/
+def pathProdToPathSquare {q q' : SpanQuiv.{u, v}} (e : q ⟶ q') :
+    QuiverSpan.Square e (pathProd (Quiver.Hom.toPath e)) (𝟭q q.α) (𝟭q q'.α) where
+  map_arr a := ⟨_, ⟨⟨rfl⟩⟩, a⟩
+  map_square t := ⟨_, ⟨⟨rfl⟩⟩, t⟩
+
+/-- Reassociate the product of two paths into the product of their concatenation.
+
+Both `pathProd` and `Quiver.Path.comp` reduce definitionally on path constructors,
+so this is a plain structural recursion: the empty path uses the right unitor, and
+the recursive step reassociates and re-whiskers by the new edge. -/
+def pathProdComp {Q R : SpanQuiv.{u, v}} (p : Quiver.Path Q R) :
+    {S : SpanQuiv.{u, v}} → (q : Quiver.Path R S) →
+      QuiverSpan.Square (QuiverSpan.comp (pathProd p) (pathProd q)) (pathProd (p.comp q))
+        (𝟭q Q.α) (𝟭q S.α)
+  | _, .nil => QuiverSpan.rightUnitHom (pathProd p)
+  | _, .cons q _ =>
+      { map_arr := fun a =>
+          ⟨a.2.2.1, (pathProdComp p q).map_arr ⟨a.1, a.2.1, a.2.2.2.1⟩, a.2.2.2.2⟩
+        map_square := fun s =>
+          ⟨s.2.2.1, (pathProdComp p q).map_square ⟨s.1, s.2.1, s.2.2.2.1⟩, s.2.2.2.2⟩ }
+
+/-- A prefunctor gives a square between identity spans. -/
+def pathSquareNil {Q R : SpanQuiv.{u, v}} (F : Q.α ⥤q R.α) :
+    QuiverSpan.Square (QuiverSpan.id Q.α) (QuiverSpan.id R.α) F F where
+  map_arr | ⟨⟨rfl⟩⟩ => ⟨⟨rfl⟩⟩
+  map_square {_ _ _ _ _ _ a b} := fun s =>
+    match a, b, s with
+    | ⟨⟨rfl⟩⟩, ⟨⟨rfl⟩⟩, ⟨⟨rfl⟩⟩ => ⟨⟨rfl⟩⟩
+
+end SpanQuiv
+
+/-- A multihom composes every vertical arrow in a path into one vertical arrow. -/
+def QuiverSpan.MultiHom {q q' : SpanQuiv.{u, v}} (p : Quiver.Path q q')
+    (A : QuiverSpan q q') :=
+  QuiverSpan.Square (SpanQuiv.pathProd p) A (𝟭q q.α) (𝟭q q'.α)
+
+/- # Basic operations for quivers, prefunctors and Path-spans -/
 
 /-- A T-span from `Q` to `R` is a span from `Q` to the free category `Paths R`. -/
 def QuiverTSpan (Q : Type u₁) (R : Type u₂) [Quiver.{v₁} Q] [Quiver.{v₂} R] :=
@@ -275,22 +339,14 @@ def comp {P : Type u₁} {R : Type u₂} {S : Type u}
   QuiverSpan.comp (QuiverSpan.comp A (QuiverSpan.paths B))
     (QuiverSpan.whiskerLeft (pathsJoin S) (QuiverSpan.id (Paths S)))
 
-def Hom {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
-    (A B : QuiverTSpan Q R) := QuiverSpan.Hom A B
-
 /-- The prefunctor on path quivers induced by a prefunctor. -/
 def pathComp {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
     (F : Q ⥤q R) : Paths Q ⥤q Paths R where
   obj x := F.obj x
   map p := F.mapPath p
 
-/-- Cells filling a square used by the path-monad T-span construction. -/
-def Square {Q Q' R R' : Type*} [Quiver Q] [Quiver Q'] [Quiver R] [Quiver R']
-    (A : QuiverSpan Q Q') (B : QuiverSpan R R') (F : Q ⥤q R) (G : Q' ⥤q R') :=
-  QuiverSpan.Square A B F G
-
 def Unit {Q : Type u₁} [Quiver.{v₁} Q] (A : QuiverTSpan Q Q) :=
-  Hom (unit Q) A
+  QuiverSpan.Square (unit Q) A (𝟭q Q) (𝟭q (Paths Q))
 
 /-- A T-span bimorphism composes arrows and pastes a square with a path of
 squares. It is stated directly rather than through Kleisli T-span composition. -/
@@ -306,11 +362,11 @@ structure BiHom {P : Type u₁} {Q : Type u₂} {R : Type u}
       C.square e (flattenPath q) (map_arr a b) (map_arr a' b')
 
 def mapComp {A A' : QuiverTSpan P Q} {B B' : QuiverTSpan Q R}
-    (f : Hom A A') (g : Hom B B') : Hom (comp A B) (comp A' B') :=
-  QuiverSpan.Hom.hcomp
-    (QuiverSpan.Hom.hcomp (show QuiverSpan.Hom A A' from f)
-      (QuiverSpan.pathsMap (show QuiverSpan.Hom B B' from g)))
-    (QuiverSpan.Hom.id (QuiverSpan.whiskerLeft (pathsJoin R) (QuiverSpan.id (Paths R))))
+    (f : QuiverSpan.Square A A' (𝟭q P) (𝟭q (Paths Q)))
+    (g : QuiverSpan.Square B B' (𝟭q Q) (𝟭q (Paths R))) :
+    QuiverSpan.Square (comp A B) (comp A' B') (𝟭q P) (𝟭q (Paths R)) :=
+  QuiverSpan.Square.prod (QuiverSpan.Square.prod f (QuiverSpan.pathsMap g))
+    (QuiverSpan.Square.id (QuiverSpan.whiskerLeft (pathsJoin R) (QuiverSpan.id (Paths R))))
 
 /-- The identity vertical arrow selected by a unit. -/
 def Unit.app {A : QuiverTSpan Q Q} (i : Unit A) (x : Q) : A.arr x x :=
@@ -333,108 +389,21 @@ end QuiverTSpan
 
 /-! ### The virtual double category of quivers, prefunctors and spans -/
 
-/-- Bundled small quivers, with independent universes for vertices and edges. -/
-def QuivSpan := Bundled Quiver.{u, v}
-
-namespace QuivSpan
-
-instance : CoeSort QuivSpan Type* where
-  coe C := C.α
-
-instance str' (C : QuivSpan) : Quiver C := C.str
-
-/-- Quiver spans are the vertical arrows between bundled quivers. -/
-instance : Quiver QuivSpan.{u, v} where
-  Hom x y := QuiverSpan x y
-
-/-- Compose the spans along a path of bundled quivers. This is the path product
-needed by the multihom span.
-
-It is defined through `Quiver.Path.rec` (rather than the equation compiler) so that
-it reduces definitionally on `nil` and `cons`; this keeps the downstream
-constructions tactic-free. -/
-def pathProd {q q' : QuivSpan.{u, v}} (p : Quiver.Path q q') : q ⟶ q' :=
-  p.rec (motive := fun t _ => q ⟶ t)
-    (QuiverSpan.id _) (fun _ e ih => QuiverSpan.comp ih e)
-
-@[simp] theorem pathProd_nil {q : QuivSpan.{u, v}} :
-    pathProd (Quiver.Path.nil (a := q)) = QuiverSpan.id _ := rfl
-
-@[simp] theorem pathProd_cons {q q' q'' : QuivSpan.{u, v}}
-    (p : Quiver.Path q q') (e : q' ⟶ q'') :
-    pathProd (p.cons e) = QuiverSpan.comp (pathProd p) e := rfl
-
-/-- The path product of a single edge is that edge, preceded by an identity span. -/
-theorem pathProd_toPath {q q' : QuivSpan.{u, v}} (e : q ⟶ q') :
-    pathProd (Quiver.Hom.toPath e) = QuiverSpan.comp (QuiverSpan.id _) e := by
-  rw [Quiver.Hom.toPath, pathProd_cons, pathProd_nil]
-
-/-- The diagonal `hom`-cell over an edge `e`: identity prefunctors give a square
-from `e` to its own path product `pathProd (Quiver.Hom.toPath e)`. -/
-def pathProdToPathSquare {q q' : QuivSpan.{u, v}} (e : q ⟶ q') :
-    QuiverSpan.Hom e (QuiverSpan.whiskerRight (Prefunctor.id q'.α)
-      (QuiverSpan.whiskerLeft (Prefunctor.id q.α) (pathProd (Quiver.Hom.toPath e)))) :=
-  (pathProd_toPath e).symm ▸
-    (show QuiverSpan.Hom e (QuiverSpan.comp (QuiverSpan.id q.α) e) from
-      { map_arr := fun a ↦ ⟨_, ⟨⟨rfl⟩⟩, a⟩
-        map_square := fun t ↦ ⟨_, ⟨⟨rfl⟩⟩, t⟩ })
-
-/-- A multihom composes every vertical arrow in a path into one vertical arrow. -/
-def QuiverSpan.MultiHom {q q' : QuivSpan.{u, v}} (p : Quiver.Path q q')
-    (A : QuiverSpan q q') := QuiverSpan.Hom (pathProd p) A
+namespace SpanQuiv
 
 /-- The T-span whose vertical arrows are prefunctors and whose cells are squares
 from a span to a path-product of spans. -/
-def hom : QuiverTSpan QuivSpan.{u, v} QuivSpan.{u, v} where
+def hom : QuiverTSpan SpanQuiv.{u, v} SpanQuiv.{u, v} where
   arr q r := q.α ⥤q r.α
-  square A p f f' := QuiverTSpan.Square A (pathProd p) f f'
-
-/-- Remove a right identity factor from a span product. -/
-def QuiverSpan.rightUnitHom {Q R : Type*} [Quiver Q] [Quiver R] (A : QuiverSpan Q R) :
-    QuiverSpan.Hom (QuiverSpan.comp A (QuiverSpan.id R)) A where
-  map_arr | ⟨_, a, ⟨⟨rfl⟩⟩⟩ => a
-  map_square {_ _ _ _ _ _ a b} := fun s =>
-    match a, b, s with
-    | ⟨_, _, ⟨⟨rfl⟩⟩⟩, ⟨_, _, ⟨⟨rfl⟩⟩⟩, ⟨_, t, ⟨⟨rfl⟩⟩⟩ => t
-
-/-- Reassociate three span products from left to right. -/
-def QuiverSpan.assocHom {P Q R S : Type*} [Quiver P] [Quiver Q] [Quiver R] [Quiver S]
-    (A : QuiverSpan P Q) (B : QuiverSpan Q R) (C : QuiverSpan R S) :
-    QuiverSpan.Hom (QuiverSpan.comp (QuiverSpan.comp A B) C)
-      (QuiverSpan.comp A (QuiverSpan.comp B C)) where
-  map_arr a := ⟨a.2.1.1, a.2.1.2.1, a.1, a.2.1.2.2, a.2.2⟩
-  map_square s := ⟨s.2.1.1, s.2.1.2.1, s.1, s.2.1.2.2, s.2.2⟩
-
-/-- Reassociate the product of two paths into the product of their concatenation.
-
-Both `pathProd` and `Quiver.Path.comp` reduce definitionally on path constructors,
-so this is a plain structural recursion: the empty path uses the right unitor, and
-the recursive step reassociates and re-whiskers by the new edge. -/
-def pathProdComp {Q R : QuivSpan.{u, v}} (p : Quiver.Path Q R) :
-    {S : QuivSpan.{u, v}} → (q : Quiver.Path R S) →
-      QuiverSpan.Hom (QuiverSpan.comp (pathProd p) (pathProd q)) (pathProd (p.comp q))
-  | _, .nil => QuiverSpan.rightUnitHom (pathProd p)
-  | _, .cons q _ =>
-      { map_arr := fun a =>
-          ⟨a.2.2.1, (pathProdComp p q).map_arr ⟨a.1, a.2.1, a.2.2.2.1⟩, a.2.2.2.2⟩
-        map_square := fun s =>
-          ⟨s.2.2.1, (pathProdComp p q).map_square ⟨s.1, s.2.1, s.2.2.2.1⟩, s.2.2.2.2⟩ }
-
-/-- A prefunctor gives a square between identity spans. -/
-def pathSquareNil {Q R : QuivSpan.{u, v}} (F : Q.α ⥤q R.α) :
-    QuiverSpan.Square (QuiverSpan.id Q.α) (QuiverSpan.id R.α) F F where
-  map_arr | ⟨⟨rfl⟩⟩ => ⟨⟨rfl⟩⟩
-  map_square {_ _ _ _ _ _ a b} := fun s =>
-    match a, b, s with
-    | ⟨⟨rfl⟩⟩, ⟨⟨rfl⟩⟩, ⟨⟨rfl⟩⟩ => ⟨⟨rfl⟩⟩
+  square A p f f' := QuiverSpan.Square A (pathProd p) f f'
 
 /-- A path of `hom`-squares composes to one square between path products.
 
 Since `pathProd` and `flattenPath` reduce definitionally on path constructors, this
 is a plain structural recursion on the `PathSquare`. -/
-noncomputable def pathSquareComp :
-    {Q Q' : QuivSpan.{u, v}} → {R R' : Paths QuivSpan.{u, v}} →
-    {p : Quiver.Path Q Q'} → {q : @Quiver.Path (Paths QuivSpan) _ R R'} →
+def pathSquareComp :
+    {Q Q' : SpanQuiv.{u, v}} → {R R' : Paths SpanQuiv.{u, v}} →
+    {p : Quiver.Path Q Q'} → {q : @Quiver.Path (Paths SpanQuiv) _ R R'} →
     {F : hom.arr Q R} → {G : hom.arr Q' R'} →
     QuiverSpan.PathSquare hom p q F G →
       QuiverSpan.Square (pathProd p) (pathProd (flattenPath q)) F G
@@ -444,23 +413,17 @@ noncomputable def pathSquareComp :
         (pathProdComp _ _)
 
 /-- Composition of prefunctors and compatible squares. -/
-noncomputable def quivSpanComp : QuiverTSpan.BiHom hom.{u, v} hom.{u, v} hom.{u, v} where
+def comp : QuiverTSpan.BiHom hom.{u, v} hom.{u, v} hom.{u, v} where
   map_arr f g := Prefunctor.comp f g
   map_square := @fun _ _ _ _ _ _ _ _ _ _ _ _ _ sf sg ↦
     QuiverSpan.Square.comp sf (pathSquareComp sg)
 
-/-- Composition of prefunctors and compatible squares. -/
-noncomputable def comp : QuiverTSpan.BiHom hom.{u, v} hom.{u, v} hom.{u, v} := quivSpanComp
-
 /-- Identity prefunctors and their compatible squares. -/
-def quivSpanId : QuiverTSpan.Unit hom.{u, v} where
+def id : QuiverTSpan.Unit hom.{u, v} where
   map_arr a := a.down.down ▸ Prefunctor.id _
   map_square {_ _ _ _ e _ a b} := fun s =>
     QuiverTSpan.unit.squareRec (e := e) (pathProdToPathSquare e) a b s
 
-/-- Identity prefunctors and their compatible squares. -/
-def id : QuiverTSpan.Unit hom.{u, v} := quivSpanId
-
-end QuivSpan
+end SpanQuiv
 
 end CategoryTheory

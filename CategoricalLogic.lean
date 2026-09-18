@@ -10,5 +10,6 @@ import CategoricalLogic.Profunctor.Basic
 -- import CategoricalLogic.Profunctor.Hom
 import CategoricalLogic.Term
 import CategoricalLogic.VirtualDoubleCategory.Basic
+import CategoricalLogic.VirtualDoubleCategory.Paths
 import CategoricalLogic.Profunctor.Cells
 import CategoricalLogic.Profunctor.Product
