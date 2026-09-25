@@ -9,7 +9,9 @@ import CategoricalLogic.Profunctor.Basic
 -- import CategoricalLogic.Profunctor.Discrete
 -- import CategoricalLogic.Profunctor.Hom
 import CategoricalLogic.Term
-import CategoricalLogic.VirtualDoubleCategory.Basic
-import CategoricalLogic.VirtualDoubleCategory.Paths
+import CategoricalLogic.QuiverSpan
+import CategoricalLogic.Paths
+import CategoricalLogic.PathsKleisli
+import CategoricalLogic.VirtualDoubleCategory
 import CategoricalLogic.Profunctor.Cells
 import CategoricalLogic.Profunctor.Product
