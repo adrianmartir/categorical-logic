@@ -57,9 +57,9 @@ Composition of prefunctors is already defined, so we only need
 * Coherence laws (only if needed somewhere else)
 * n-ary horizontal composition of spans (`SpanQuiv.composePath`, after mathlib's
   `composePath`)
-* Splitting an n-ary composite over a concatenation of two paths, in both directions
-  (`composePathComp` and `composePathCompInv`). The direction *out of* the concatenated
-  path is the one that substitution of cells consumes. Also the unary case, comparing a
+* Splitting an n-ary composite over a concatenation of two paths (`composePathCompInv`), in
+  the direction *out of* the concatenated path, which is the one that substitution of cells
+  consumes. Also the unary case, comparing a
   single span with the n-ary composite of the one-element path on it (`composePathToPath`,
   which is the left unitor).
 * n-ary horizontal composition of squares. It needs the chains of squares of `Paths.lean`, so

@@ -225,18 +225,6 @@ def composePathToPath {q q' : SpanQuiv.{u, v}} (e : q ⟶ q') :
     QuiverSpan.Hom (composePath e.toPath) e :=
   QuiverSpan.leftUnitor e
 
-/-- Join the composites of two paths into the composite of their concatenation. -/
-def composePathComp {q r : SpanQuiv.{u, v}} (p : Quiver.Path q r) :
-    {s : SpanQuiv.{u, v}} → (p' : Quiver.Path r s) →
-      QuiverSpan.Hom (QuiverSpan.comp (composePath p) (composePath p'))
-        (composePath (p.comp p'))
-  | _, .nil => QuiverSpan.rightUnitor (composePath p)
-  | _, .cons p' _ =>
-      { map_arr := fun a =>
-          ⟨a.2.2.1, (composePathComp p p').map_arr ⟨a.1, a.2.1, a.2.2.2.1⟩, a.2.2.2.2⟩
-        map_square := fun s =>
-          ⟨s.2.2.1, (composePathComp p p').map_square ⟨s.1, s.2.1, s.2.2.2.1⟩, s.2.2.2.2⟩ }
-
 /-- Split the composite of a concatenation into the composites of the two paths.
 
 This is the direction that substitution of cells consumes: the concatenated path is the
