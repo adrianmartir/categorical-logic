@@ -7,7 +7,7 @@ Authors: Adrian Marti, Aristotle
 import Mathlib
 import Mathlib.CategoryTheory.Profunctor.Basic
 
-/-! Compatibility notation for the elementwise use of the backported profunctor API. -/
+/-! Compatibility notation for the elementwise use of the profunctor API. -/
 
 namespace CategoryTheory.Profunctor
 

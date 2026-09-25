@@ -1,5 +1,3 @@
--- import CategoricalLogic.Mathlib.CategoryTheory.Limits.Chosen.End
--- import CategoricalLogic.Mathlib.CategoryTheory.Limits.Types.End
 import Mathlib.CategoryTheory.Profunctor.Basic
 -- import CategoricalLogic.Mathlib.CategoryTheory.Profunctor.Bicategory
 -- import CategoricalLogic.Mathlib.CategoryTheory.Profunctor.Comp
