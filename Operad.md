@@ -2,6 +2,10 @@ This file should not contain any references to old identifiers or old states. Re
 
 We will define virtual double categories and T-operads for a monad T on a virtual double category in multiple layers.
 
+These are four modules, directly in the `CategoricalLogic` directory, each importing the
+previous one: `QuiverSpan.lean`, `Paths.lean`, `PathsKleisli.lean` and
+`VirtualDoubleCategory.lean`. One section below per module.
+
 ### Quiver spans
 
 A quiver span is a span $Q \leftarrow A \rightarrow R$ between two quivers, but axiomatized
@@ -132,10 +136,8 @@ Aristotle rather than letting the file grow around it.
 
 ### The Kleisli virtual double category
 
-The `PathKleisli.lean` module should contain the Kleisli virtual double category for
-`Paths`, and on top of it the definitions of a virtual double category and of a functor of
-virtual double categories. A virtual double category *is* a monoid there, so these belong
-in the same module.
+The `PathsKleisli.lean` module should contain the Kleisli virtual double category for
+`Paths`. Virtual double categories are the monoids there, but they get their own module.
 
 **Kleisli spans and their composition.**
 * A Kleisli span from `Q` to `R` is a quiver span from `Q` to `Paths R` (currently
@@ -156,37 +158,65 @@ in the same module.
 * Kleisli cells with nullary and binary source, as abbreviations for cells out of the
   Kleisli identity and out of a binary Kleisli composite (currently `QuiverTSpan.Unit` and
   `QuiverTSpan.BiHom`).
+* n-ary Kleisli composition (not needed). A monoid only ever uses the nullary and the binary
+  case, and so does a morphism of monoids.
 
-n-ary Kleisli composition is not needed: a monoid only ever uses the nullary and binary
-cases, and so does a morphism of monoids.
+### Virtual double categories
+
+The `VirtualDoubleCategory.lean` module should contain virtual double categories, their
+functors, transformations between functors, and monads on a virtual double category. A
+virtual double category is a monoid in the Kleisli virtual double category of the previous
+section, so the module is that definition unfolded and then built upon.
 
 **Virtual double categories.**
-* A virtual double category is a quiver `Q` together with a monoid on it in the Kleisli
-  sense: a Kleisli span `Q ⇸ Q`, a nullary cell into it and a binary cell into it (currently
-  `QuiverTSpan.Monoid`, which should be renamed and moved here). The dictionary is worth a
-  docstring: vertices are objects, edges are proarrows, the arrows of the span are the
-  arrows, and a square of the span over an edge `e` and a path `p` is a cell with source `p`
-  and target `e` — the path is exactly where the n-ary source comes from.
-* Elementwise accessors for the two cells: identity arrow and identity cell from the
-  nullary one, composition of arrows and substitution of cells from the binary one.
-  Currently only the arrow halves exist (`Unit.app`, `BiHom.app`); the cell halves are new
-  and are what the term calculus will actually be written against.
-* Axioms (associativity and unit for arrows and for cells). Deferred with the other laws,
-  but we should state them elementwise through the accessors above rather than as equations
-  between morphisms of spans — the latter needs unitors and an associator for Kleisli
-  composition, which is the only thing that would drag the deferred span-level unit,
-  multiplication and comparison cells of `Paths.lean` back in.
+* A virtual double category is a quiver `Q` together with a Kleisli span `A : Q ⇸ Q`, a
+  nullary cell into it and a binary cell into it (currently `QuiverTSpan.Monoid`, which
+  should be renamed and moved here).
+* The dictionary is worth a docstring: vertices of `Q` are objects, edges of `Q` are
+  proarrows, `A.arr x y` are the arrows `x ⟶ y`, and `A.square e p a b` is a cell with
+  n-ary source `p`, unary target `e` and side arrows `a` and `b`. The path `p` is exactly
+  where the n-ary source comes from.
+* Elementwise accessors for the two cells: identity arrow and identity cell from the nullary
+  one, composition of arrows and substitution of cells from the binary one. Currently only
+  the arrow halves exist (`Unit.app`, `BiHom.app`); the cell halves are new and are what the
+  term calculus will actually be written against.
+* Axioms — associativity and unit, for arrows and for cells — as fields, stated elementwise
+  through the accessors above rather than as equations between morphisms of spans. The
+  latter needs unitors and an associator for Kleisli composition, which is the only thing
+  that would drag the span-level unit, multiplication and comparison cells of `Paths.lean`
+  back in. Since the first pass constructs no instances, nothing has to be proved yet.
 
-**Functors.**
-* A functor of virtual double categories from `(Q, A)` to `(R, B)` is a prefunctor
-  `f : Q ⥤q R` together with a Kleisli cell from `A` to `B` over `f` and `f`, so a square
-  from `A` to `B` over `f` and `Paths f`. Elementwise: a map on objects, proarrows, arrows
-  and cells.
-* Axioms: compatibility with the nullary and the binary cell, i.e. the functor preserves
-  identity arrows, identity cells and substitution. Stated elementwise, and deferred like
-  the rest.
+**Functors.** A functor from `(Q, A)` to `(R, B)` is a prefunctor `f : Q ⥤q R` together with
+a Kleisli cell from `A` to `B` over `f` and `f`, so a square from `A` to `B` over `f` and
+`Paths f`.
+* Elementwise: maps on objects, proarrows, arrows and cells, where `f` acts on the n-ary
+  source of a cell through `Prefunctor.mapPath`.
+* Axioms: preservation of identity arrows, identity cells and substitution.
+* The identity functor and composition of functors. The monad definition below needs both.
 
-Identities and composition of functors, transformations, and the exhibition of quivers,
-prefunctors and spans as an example of a virtual double category are all out of scope for
-the first pass. The last of these is the natural first example and the main consumer of
-`pathProd` and `MultiSquare`, so it is the obvious thing to do next.
+**Transformations.** A transformation from `F = (f, _)` to `G = (g, _)` consists of
+* for each object `x`, an arrow `θ x : B.arr (f x) (g x)`;
+* for each proarrow `e : x ⟶ x'`, a cell of `B` with target `f e`, with the one-element path
+  on `g e` as its source, and with `θ x` and `θ x'` as its side arrows;
+* naturality in arrows: `θ x` composed with `G a` equals `F a` composed with `θ y`, for
+  every arrow `a : x ⟶ y`;
+* cell-naturality: for every cell `α` with target `e` and n-ary source `p = (p₁, …, pₙ)`,
+  substituting `G α` into `θ e` equals substituting `θ p₁, …, θ pₙ` into `F α`. Both sides
+  are cells with target `f e` and source `(g p₁, …, g pₙ)`, so this typechecks as stated.
+* Identity transformations, vertical composition, and whiskering by a functor on either
+  side. The four whiskerings are what the monad laws below are stated with.
+
+**Monads.** A monad on a virtual double category `X` consists of
+* an endofunctor `T` of `X`;
+* a transformation `η` from the identity functor to `T`;
+* a transformation `μ` from `T ∘ T` to `T`;
+* the unit laws `μ ∘ ηT = id` and `μ ∘ Tη = id`, and associativity `μ ∘ Tμ = μ ∘ μT`, as
+  equalities of transformations, hence componentwise on objects and on proarrows.
+
+`Paths` is a monad on the virtual double category of quivers, prefunctors and quiver spans,
+but we cannot say so in this module. That virtual double category has to be exhibited as an
+instance first, which needs `pathProd` and `MultiSquare` and the span-level unit and
+multiplication of `Paths.lean`, and which lands one universe up. So `Paths.lean` and
+`PathsKleisli.lean` stay independent of this module, and the definition above is there for
+the monads whose operads we want later. Exhibiting quivers, prefunctors and spans as an
+instance is the natural next step after the first pass.
