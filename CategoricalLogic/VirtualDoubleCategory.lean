@@ -95,6 +95,10 @@ end VirtualDoubleCategoryStruct
 
 namespace SpanQuiv
 
+/-- The vertices of `Paths SpanQuiv` are those of `SpanQuiv`, so they are quivers too. Instance
+resolution does not see through `Paths` on its own. -/
+instance (C : Paths SpanQuiv.{u, v}) : Quiver.{max u v} C.α := SpanQuiv.str' C
+
 /-- The Kleisli span of the virtual double category of quivers, prefunctors and quiver spans.
 Its arrows from `r` to `q` are the prefunctors `r ⥤q q`, and its cells with source a path `p`
 of spans and target a span `A` are the multisquares `MultiSquare p A`. -/

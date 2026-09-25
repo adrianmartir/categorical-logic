@@ -114,10 +114,10 @@ theorem mapL_id {C D : ProfCat.{v, u}} {d : D} {c : C}
     {p : Quiver.Path C D} (args : PathProd p d c) :
     args.mapL (𝟙 d) = args := by
   induction p with
-  | nil => match args with | ⟨f⟩ => simp [mapL]
+  | nil => match args with | ⟨f⟩ => simp [mapL]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapL, Profunctor.mapL]
+    | ⟨e, h, inner⟩ => simp [mapL, Profunctor.mapL]; rfl
 
 /-- `mapR` preserves identity morphisms. -/
 @[simp]
@@ -125,30 +125,30 @@ theorem mapR_id {C D : ProfCat.{v, u}} {d : D} {c : C}
     {p : Quiver.Path C D} (args : PathProd p d c) :
     args.mapR (𝟙 c) = args := by
   induction p with
-  | nil => match args with | ⟨f⟩ => simp [mapR]
+  | nil => match args with | ⟨f⟩ => simp [mapR]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapR, ih]
+    | ⟨e, h, inner⟩ => simp [mapR, ih]; rfl
 
 /-- `mapL` respects composition. -/
 theorem mapL_comp {C D : ProfCat.{v, u}} {d d' d'' : D} {c : C}
     {p : Quiver.Path C D} (args : PathProd p d c) (f : d' ⟶ d) (g : d'' ⟶ d') :
     args.mapL (g ≫ f) = (args.mapL f).mapL g := by
   induction p with
-  | nil => match args with | ⟨h⟩ => simp [mapL, Category.assoc]
+  | nil => match args with | ⟨h⟩ => simp [mapL, Category.assoc]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapL, Profunctor.mapL_comp]
+    | ⟨e, h, inner⟩ => simp [mapL, Profunctor.mapL_comp]; rfl
 
 /-- `mapR` respects composition. -/
 theorem mapR_comp {C D : ProfCat.{v, u}} {d : D} {c c' c'' : C}
     {p : Quiver.Path C D} (args : PathProd p d c) (f : c ⟶ c') (g : c' ⟶ c'') :
     args.mapR (f ≫ g) = (args.mapR f).mapR g := by
   induction p with
-  | nil => match args with | ⟨h⟩ => simp [mapR, Category.assoc]
+  | nil => match args with | ⟨h⟩ => simp [mapR, Category.assoc]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapR, ih]
+    | ⟨e, h, inner⟩ => simp [mapR, ih]; rfl
 
 /-- `mapL` and `mapR` commute: they act on independent components of `PathProd`. -/
 theorem mapL_mapR_comm {C D : ProfCat.{v, u}} {d d' : D} {c c' : C}
@@ -157,7 +157,7 @@ theorem mapL_mapR_comm {C D : ProfCat.{v, u}} {d d' : D} {c c' : C}
   induction p generalizing c c' with
   | nil =>
     match args with
-    | ⟨f⟩ => simp [PathProd.mapL, PathProd.mapR, Category.assoc]
+    | ⟨f⟩ => simp [PathProd.mapL, PathProd.mapR, Category.assoc]; rfl
   | cons p H ih =>
     match args with
     | ⟨e, inner, h⟩ => rfl
@@ -169,11 +169,11 @@ noncomputable def toProfunctor {C D : ProfCat.{v, u}}
     (p : @Quiver.Path ProfCat _ C D) : Profunctor.{max u v} C D :=
   Profunctor.ofCore {
     obj c d := PathProd p d c
-    map f g args := (args.mapR f).mapL g
+    map f g := TypeCat.ofHom fun args => (args.mapR f).mapL g
     map_id _ _ := by ext args; simp
     map_comp f' f g g' := by
-      ext args
-      simp only [mapL_comp, mapR_comp]
+      refine ConcreteCategory.hom_ext _ _ fun args => ?_
+      simp only [types_comp_apply, TypeCat.ofHom_apply, mapL_comp, mapR_comp]
       congr 1
       exact (mapL_mapR_comm (args.mapR f') f g').symm }
 
@@ -182,14 +182,14 @@ noncomputable def toProfunctor {C D : ProfCat.{v, u}}
 theorem toProfunctor_mapL {C D : ProfCat.{v, u}} {d d' : D} {c : C}
     {p : @Quiver.Path ProfCat _ C D} (f : d' ⟶ d) (args : PathProd p d c) :
     (toProfunctor p).mapL f args = args.mapL f := by
-  simp [Profunctor.mapL, toProfunctor]
+  simp [Profunctor.mapL, toProfunctor]; rfl
 
 /-- `Profunctor.mapR` on `toProfunctor` agrees with `PathProd.mapR`. -/
 @[simp]
 theorem toProfunctor_mapR {C D : ProfCat.{v, u}} {d : D} {c c' : C}
     {p : @Quiver.Path ProfCat _ C D} (g : c ⟶ c') (args : PathProd p d c) :
     (toProfunctor p).mapR g args = args.mapR g := by
-  simp [Profunctor.mapR, toProfunctor]
+  simp [Profunctor.mapR, toProfunctor]; rfl
 
 /-- Concatenation of path products: given path products for composable paths `p` and `q`,
 produce a path product for the composition `p.comp q`. -/
@@ -316,7 +316,7 @@ noncomputable def TensorProd.toProfunctor {C D : ProfCat.{v, u}}
     (p : @Quiver.Path ProfCat _ C D) : Profunctor.{max u v} C D :=
   Profunctor.ofCore {
   obj c d := TensorProd p d c
-  map f g q := _root_.Quotient.lift
+  map f g := TypeCat.ofHom fun q => _root_.Quotient.lift
     (fun args => _root_.Quotient.mk _ ((args.mapR f).mapL g))
     (by
       intro a b hab
@@ -332,12 +332,13 @@ noncomputable def TensorProd.toProfunctor {C D : ProfCat.{v, u}}
       | trans _ _ _ _ _ ih1 ih2 => exact Relation.EqvGen.trans _ _ _ ih1 ih2)
     q
   map_id _ _ := by
-    ext q
+    refine ConcreteCategory.hom_ext _ _ fun q => ?_
     induction q using _root_.Quotient.ind
-    simp [PathProd.mapR_id, PathProd.mapL_id]
+    exact congrArg (_root_.Quotient.mk _) (by simp [PathProd.mapR_id, PathProd.mapL_id])
   map_comp f' f g g' := by
-    ext q
+    refine ConcreteCategory.hom_ext _ _ fun q => ?_
     induction q using _root_.Quotient.ind
-    simp [PathProd.mapL_comp, PathProd.mapR_comp, PathProd.mapL_mapR_comm] }
+    exact congrArg (_root_.Quotient.mk _)
+      (by simp [PathProd.mapL_comp, PathProd.mapR_comp, PathProd.mapL_mapR_comm]) }
 
 end CategoryTheory

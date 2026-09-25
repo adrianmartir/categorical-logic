@@ -5,7 +5,7 @@ Authors: Adrian Marti, Aristotle
 -/
 
 import Mathlib
-import CategoricalLogic.Mathlib.CategoryTheory.Profunctor.Basic
+import Mathlib.CategoryTheory.Profunctor.Basic
 
 /-! Compatibility notation for the elementwise use of the backported profunctor API. -/
 
@@ -39,8 +39,7 @@ theorem mapL_comp (H : Profunctor.{w} C D) {X X' X'' : D}
 theorem mapR_comp (H : Profunctor.{w} C D) {X : D} {Y Y' Y'' : C}
     (g : Y ⟶ Y') (g' : Y' ⟶ Y'') (e : H.app X Y) :
     H.mapR (g ≫ g') e = H.mapR g' (H.mapR g e) := by
-  simpa only [mapR, NatTrans.comp_app] using
-    congrArg (fun k ↦ k.app (.op X) e) (H.map_comp g g')
+  simp [mapR]
 
 theorem mapL_mapR_comm (H : Profunctor.{w} C D) {X X' : D} {Y Y' : C}
     (f : X ⟶ X') (g : Y ⟶ Y') (e : H.app X' Y) :

@@ -27,15 +27,15 @@ def Profunctor.ofMat {X Y} (S : X → Y → Type u) :
     Profunctor (Cat.of (Discrete Y)) (Cat.of (Discrete X)) :=
   Profunctor.ofCore {
     obj y x := S x.as y.as
-    map f g := fun h ↦
+    map f g := TypeCat.ofHom fun h ↦
       (Discrete.eq_of_hom f) ▸ (Discrete.eq_of_hom g) ▸ h
     map_id _ _ := by ext; rfl
     map_comp := by
       rintro ⟨x₁⟩ ⟨x₂⟩ ⟨x₃⟩ ⟨y₁⟩ ⟨y₂⟩ ⟨y₃⟩ f f' g g'
-      obtain ⟨⟨hf⟩⟩ := f
-      obtain ⟨⟨hf'⟩⟩ := f'
-      obtain ⟨⟨hg⟩⟩ := g
-      obtain ⟨⟨hg'⟩⟩ := g'
+      obtain ⟨hf⟩ := f
+      obtain ⟨hf'⟩ := f'
+      obtain ⟨hg⟩ := g
+      obtain ⟨hg'⟩ := g'
       change x₁ = x₂ at hf
       change x₂ = x₃ at hf'
       change y₁ = y₂ at hg

@@ -1,6 +1,6 @@
 -- import CategoricalLogic.Mathlib.CategoryTheory.Limits.Chosen.End
 -- import CategoricalLogic.Mathlib.CategoryTheory.Limits.Types.End
-import CategoricalLogic.Mathlib.CategoryTheory.Profunctor.Basic
+import Mathlib.CategoryTheory.Profunctor.Basic
 -- import CategoricalLogic.Mathlib.CategoryTheory.Profunctor.Bicategory
 -- import CategoricalLogic.Mathlib.CategoryTheory.Profunctor.Comp
 import CategoricalLogic.Operad

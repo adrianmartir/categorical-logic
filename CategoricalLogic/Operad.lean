@@ -20,7 +20,7 @@ References:
 
 namespace CategoryTheory
 
-universe u v
+universe u v u' v' w w'
 
 abbrev Unit {X : Type*} [Category* X] (h : Profunctor X X) := (a : X) → h.app a a
 
@@ -57,24 +57,24 @@ Most notably, this typeclass is missing preservation properties for vertical com
 natural transformations, units and binatural transformations.
 
 This a simplified variant of a *functor of equipments*. -/
-class FunctorProf (T : Functor Cat Cat) where
+class FunctorProf (T : Functor Cat.{v, u} Cat.{v', u'}) where
   /-- Mapping action on profunctors and morphisms of profunctors. -/
-  mapProf {X Y : Type u} [Category.{v} X] [Category.{v} Y] : Profunctor Y X ⥤
-    Profunctor (T.obj (Cat.of Y)) (T.obj (Cat.of X))
+  mapProf {X Y : Type u} [Category.{v} X] [Category.{v} Y] : Profunctor.{w} Y X ⥤
+    Profunctor.{w'} (T.obj (Cat.of Y)) (T.obj (Cat.of X))
   /-- Functoriality with respect to the left action. -/
   mapProf_actLeft {X Y Z : Type u} [Category.{v} X] [Category.{v} Y] [Category.{v} Z]
-      (f : Z ⥤ X) (p : Profunctor Y X) :
+      (f : Z ⥤ X) (p : Profunctor.{w} Y X) :
     mapProf.obj (p.actLeft f) = (mapProf.obj p).actLeft (T.map f.toCatHom).toFunctor
   /-- Functoriality with respect to the right action. -/
   mapProf_actRight {X Y Z : Type u} [Category.{v} X] [Category.{v} Y] [Category.{v} Z]
-      (p : Profunctor Y X) (f : Z ⥤ Y) :
+      (p : Profunctor.{w} Y X) (f : Z ⥤ Y) :
     mapProf.obj (p.actRight f) = (mapProf.obj p).actRight (T.map f.toCatHom).toFunctor
   /-- Mapping action on units. -/
-  mapUnit {X : Type u} [Category.{v} X] {h : Profunctor X X} :
+  mapUnit {X : Type u} [Category.{v} X] {h : Profunctor.{w} X X} :
     Unit h → Unit (mapProf.obj h)
   /-- Mapping action on binatural transformations. -/
   mapBi {X Y Z : Type u} [Category.{v} X] [Category.{v} Y] [Category.{v} Z]
-      {h : Profunctor Y X} {k : Profunctor Z Y} {j : Profunctor Z X} :
+      {h : Profunctor.{w} Y X} {k : Profunctor.{w} Z Y} {j : Profunctor.{w} Z X} :
     BiNatTrans h k j → BiNatTrans (mapProf.obj h) (mapProf.obj k) (mapProf.obj j)
 
 -- Mapping actions for cells
@@ -111,11 +111,11 @@ def FunctorProf.mapBiR (T : Functor Cat Cat) [FunctorProf T]
 if the corresponding naturality squares for profunctors can be filled by 2-cells.
 
 We omit the corresponding monad laws for those cells. -/
-class MonadProf (T : Monad Cat) extends FunctorProf T where
-  η_prof {X Y : Type u} [Category.{v} X] [Category.{v} Y] (h : Profunctor Y X) : h ⟶
+class MonadProf (T : Monad Cat.{v, u}) extends FunctorProf.{u, v, u, v, w, w} T.toFunctor where
+  η_prof {X Y : Type u} [Category.{v} X] [Category.{v} Y] (h : Profunctor.{w} Y X) : h ⟶
     Profunctor.actLeft (T.η.app (Cat.of X)).toFunctor
       (Profunctor.actRight (mapProf.obj h) (T.η.app (Cat.of Y)).toFunctor)
-  μ_prof {X Y : Type u} [Category.{v} X] [Category.{v} Y] (h : Profunctor Y X) :
+  μ_prof {X Y : Type u} [Category.{v} X] [Category.{v} Y] (h : Profunctor.{w} Y X) :
     mapProf.obj (mapProf.obj h) ⟶
       Profunctor.actLeft (T.μ.app (Cat.of X)).toFunctor
         (Profunctor.actRight (mapProf.obj h) (T.μ.app (Cat.of Y)).toFunctor)
@@ -143,12 +143,12 @@ lemma assoc_obj {T : Monad Cat} {X : Type u} [Category.{v} X]
     (fun f : T.obj (T.obj (T.obj (Cat.of X))) ⟶ T.obj (Cat.of X) ↦ f.toFunctor.obj a)
     (T.assoc (Cat.of X)).symm
 
-variable (T : Monad Cat) [MonadProf T]
+variable (T : Monad Cat.{v, u}) [MonadProf.{u, v, w} T]
 
 open Profunctor FunctorProf MonadProf
 
 structure Operad (X : Type u) [Category.{v} X] where
-  hom : Profunctor X (T.obj (Cat.of X))
+  hom : Profunctor.{w} X (T.obj (Cat.of X))
   id : Unit (actLeft (T.η.app (Cat.of X)).toFunctor hom)
   comp : BiNatTrans (mapProf.obj hom) hom (actLeft (T.μ.app (Cat.of X)).toFunctor hom)
   comp_id {a : X} {b : T.obj (Cat.of X)} (f : hom.app b a) :

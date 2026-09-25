@@ -29,6 +29,9 @@ namespace CategoryTheory
 
 universe u v u₁ v₁ u₂ v₂ u₃ v₃ u₄ v₄ w z
 
+-- The apex universes `w` and `z` only occur together in the type; they are determined by the
+-- span a `KleisliSpan` is unified with, exactly as for `QuiverSpan`.
+set_option linter.checkUnivs false in
 /-- A horizontal arrow from `Q` to `R` in the Kleisli virtual double category of `Paths`: a
 quiver span from `Q` to `Paths R`. -/
 abbrev KleisliSpan (Q : Type u₁) (R : Type u₂) [Quiver.{v₁} Q] [Quiver.{v₂} R] :=

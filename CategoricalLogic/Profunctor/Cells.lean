@@ -87,7 +87,7 @@ theorem right_unit {a b : V} (p : Quiver.Path a b) :
   | nil => rfl
   | cons p _ ih =>
     change (flatten (@Prefunctor.mapPath V _ (Paths V) _ η _ _ p)).comp _ = _
-    aesop
+    exact congrArg (fun q ↦ Quiver.Path.comp q (η.map _)) ih
 
 /-- Flattening distributes over path composition. -/
 theorem flatten_comp {a b c : Paths V} (p : Quiver.Path a b) (q : Quiver.Path b c) :
@@ -110,7 +110,8 @@ theorem assoc {a b : Paths (Paths V)}
   | nil => rfl
   | cons p e ih =>
     show (flatten (μ.mapPath p)).comp (flatten e) = flatten ((flatten p).comp e)
-    rw [ ih, flatten_comp ]
+    exact (congrArg (fun q ↦ Quiver.Path.comp q (flatten e)) ih).trans
+      (flatten_comp (flatten p) e).symm
 
 end Paths
 

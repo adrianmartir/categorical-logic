@@ -183,6 +183,9 @@ end QuiverSpan
 
 /-! ### n-ary horizontal composition -/
 
+-- As for mathlib's `Quiv`, the universes only occur together in the type, so they are always
+-- given explicitly.
+set_option linter.checkUnivs false in
 /-- Bundled quivers, as the vertices of the quiver whose edges are quiver spans; n-ary
 horizontal composition is then composition along a `Quiver.Path` of spans.
 
