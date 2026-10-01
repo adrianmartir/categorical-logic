@@ -304,13 +304,19 @@ theorem hComp_vComp_map_square_heq {P₀ : Type u₁} {Q₀ : Type u₂} {R₀ :
 
 end Square
 
-/-- A Kleisli cell with nullary source, target `A` and identity vertical sides: a morphism out
-of the Kleisli identity. -/
+/-- A cell with nullary source, target `A` and identity vertical sides: a morphism of spans out
+of the Kleisli identity.
+
+It is a square of Kleisli spans over identity prefunctors, but it is stated as a morphism of
+spans: `Square (KleisliSpan.id Q) A (𝟭q Q) (𝟭q Q)` would have `Paths.map (𝟭q Q)` as its right
+side, which is not definitionally `𝟭q (Paths Q)`. As a morphism of spans it composes with the
+whiskerings and coherence cells without transport. -/
 abbrev NullaryCell {Q : Type u} [Quiver.{v} Q] (A : KleisliSpan Q Q) :=
   Hom (KleisliSpan.id Q) A
 
-/-- A Kleisli cell with binary source `A`, `B`, target `C` and identity vertical sides: a
-morphism out of the binary Kleisli composite. -/
+/-- A cell with binary source `A`, `B`, target `C` and identity vertical sides: a morphism of
+spans out of the binary Kleisli composite. It is a morphism of spans rather than a square of
+Kleisli spans for the same reason as `NullaryCell`. -/
 abbrev BinaryCell {P : Type u₁} {Q : Type u₂} {R : Type u₃}
     [Quiver.{v₁} P] [Quiver.{v₂} Q] [Quiver.{v₃} R]
     (A : KleisliSpan P Q) (B : KleisliSpan Q R) (C : KleisliSpan P R) :=
