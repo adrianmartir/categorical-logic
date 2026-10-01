@@ -36,7 +36,8 @@ prefunctors `F`, `G` from the feet of `A` to the feet of `B`.
 ## Main definitions
 
 * `QuiverSpan`, `QuiverSpan.Square`, `QuiverSpan.Hom`: spans, squares, morphisms of spans.
-* `QuiverSpan.Square.vComp`: vertical composition of squares.
+* `QuiverSpan.Square.vComp`, `QuiverSpan.Hom.comp`: vertical composition of squares and of
+  morphisms of spans.
 * `QuiverSpan.restrict`: restriction of a span along prefunctors.
 * `QuiverSpan.id`, `QuiverSpan.comp`, `QuiverSpan.Square.hComp`: horizontal composition.
 * `SpanQuiv.composePath`: n-ary horizontal composition along a path of spans.
@@ -130,6 +131,21 @@ def vComp {Q Q' R R' S S' : Type*}
   map_square s' := t.map_square (s.map_square s')
 
 end Square
+
+theorem Square.map_square_castSquare_heq {Q Q' R R' : Type*} [Quiver Q] [Quiver Q']
+    [Quiver R] [Quiver R'] {A : QuiverSpan Q Q'} {B : QuiverSpan R R'} {F : Q ⥤q R}
+    {G : Q' ⥤q R'} (s : Square A B F G) {x x' : Q} {y y' : Q'} {e : x ⟶ x'}
+    {e₁ e₂ : y ⟶ y'} {a₁ a₂ : A.arr x y} {b₁ b₂ : A.arr x' y'}
+    (he : e₁ = e₂) (ha : a₁ = a₂) (hb : b₁ = b₂) (t : A.square e e₁ a₁ b₁) :
+    s.map_square (A.castSquare he ha hb t) ≍ s.map_square t := by
+  subst he ha hb
+  rfl
+
+/-- Composition of morphisms of spans. -/
+def Hom.comp {Q R : Type*} [Quiver Q] [Quiver R] {A B C : QuiverSpan Q R} (f : Hom A B)
+    (g : Hom B C) : Hom A C where
+  map_arr a := g.map_arr (f.map_arr a)
+  map_square s := g.map_square (f.map_square s)
 
 /-- The restriction `A(F, G)` of a span `A` along prefunctors `F` and `G` into its feet. -/
 def restrict {Q : Type u₁} {R : Type u₂} {S : Type u₃} {T : Type u₄}

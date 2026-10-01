@@ -23,9 +23,16 @@ sources: a square of a Kleisli span has a single edge as target and a path as so
 * `KleisliSpan.id`, `KleisliSpan.comp`: the Kleisli identity and binary Kleisli composition.
 * `KleisliSpan.Cell`, `KleisliSpan.NullaryCell`, `KleisliSpan.BinaryCell`: cells with unary,
   nullary and binary source.
-* `KleisliSpan.NullaryCell.arr`, `.square`, `.chain` and `KleisliSpan.BinaryCell.arr`,
-  `.square`, `.chain`: nullary and binary cells elementwise, on arrows, on squares and on
-  chains of squares. The accessors of virtual double categories are these.
+* `KleisliSpan.Cell.id`, `KleisliSpan.Cell.vComp`: identity and vertical composition of
+  cells.
+* `KleisliSpan.whiskerLeft`, `KleisliSpan.whiskerRight`: whiskering of morphisms of Kleisli
+  spans.
+* `KleisliSpan.leftUnitor`, `KleisliSpan.rightUnitor`, `KleisliSpan.associatorInv`: the
+  coherence cells of Kleisli composition that the monoid laws use. Only the inverse of the
+  associator is needed, and it only concatenates chains, never splits them.
+* `KleisliSpan.NullaryCell.arr`, `.square` and `KleisliSpan.BinaryCell.arr`, `.square`:
+  nullary and binary cells elementwise, on arrows and on squares. The accessors of virtual
+  double categories are these.
 -/
 
 namespace CategoryTheory
@@ -66,12 +73,138 @@ def hComp {P : Type u₁} {Q : Type u₂} {R : Type u₃}
     Hom (A.comp B) (A'.comp B') :=
   Square.hComp (Square.hComp f (Hom.paths g)) (Square.id _)
 
+/-- Whiskering a morphism of Kleisli spans on the right of a Kleisli composite. -/
+def whiskerRight {P : Type u₁} {Q : Type u₂} {R : Type u₃}
+    [Quiver.{v₁} P] [Quiver.{v₂} Q] [Quiver.{v₃} R]
+    {A A' : KleisliSpan P Q} (f : Hom A A') (B : KleisliSpan Q R) :
+    Hom (A.comp B) (A'.comp B) :=
+  Square.hComp (Square.hComp f (Square.id _)) (Square.id _)
+
+/-- Whiskering a morphism of Kleisli spans on the left of a Kleisli composite. -/
+def whiskerLeft {P : Type u₁} {Q : Type u₂} {R : Type u₃}
+    [Quiver.{v₁} P] [Quiver.{v₂} Q] [Quiver.{v₃} R]
+    (A : KleisliSpan P Q) {B B' : KleisliSpan Q R} (g : Hom B B') :
+    Hom (A.comp B) (A.comp B') :=
+  Square.hComp (Square.hComp (Square.id A) (Hom.paths g)) (Square.id _)
+
+/-- The square of the left unitor, from the components of a square of the composite. -/
+private def leftUnitorSquare {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    {A : KleisliSpan Q R} {x x' : Q} {y y' : Paths R} {e : x ⟶ x'} {e' : y ⟶ y'}
+    {a : A.arr x y} {b : A.arr x' y'} {n : Quiver.Path x x'}
+    {m : Quiver.Path (V := Paths R) y y'} (hn : (Paths.of Q).map e = n)
+    (c : PathSquare A a n m b) (h : (Paths.flatten R).map m = e') : A.square e e' a b :=
+  match n, m, hn, c, h with
+  | _, _, rfl, .cons .nil t, h =>
+    A.castSquare ((Paths.flatten_map_of (Q := R) _).symm.trans h) rfl rfl t
+
+/-- The left unitor of Kleisli composition. A square of the composite consists of the
+one-element path on its target and a one-element chain, whose square is the result. -/
+def leftUnitor {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : KleisliSpan Q R) : Hom ((KleisliSpan.id Q).comp A) A where
+  map_arr | ⟨_, ⟨_, ⟨⟨rfl⟩⟩, a⟩, ⟨⟨rfl⟩⟩⟩ => a
+  map_square {_ _ _ _ _ _ a b} := fun s =>
+    match a, b, s with
+    | ⟨_, ⟨_, ⟨⟨rfl⟩⟩, _⟩, ⟨⟨rfl⟩⟩⟩, ⟨_, ⟨_, ⟨⟨rfl⟩⟩, _⟩, ⟨⟨rfl⟩⟩⟩, ⟨_, ⟨_, ⟨⟨hn⟩⟩, c⟩, ⟨⟨h⟩⟩⟩ =>
+      leftUnitorSquare hn c h
+
+/-- The right unitor of Kleisli composition. A square of the composite consists of a square
+and a chain of Kleisli identities, which forces its source to be the path of one-element
+paths on the source of the square. -/
+def rightUnitor {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : KleisliSpan Q R) : Hom (A.comp (KleisliSpan.id R)) A where
+  map_arr | ⟨_, ⟨_, a, ⟨⟨rfl⟩⟩⟩, ⟨⟨rfl⟩⟩⟩ => a
+  map_square {_ _ _ _ _ _ a b} := fun s =>
+    match a, b, s with
+    | ⟨_, ⟨_, _, ⟨⟨rfl⟩⟩⟩, ⟨⟨rfl⟩⟩⟩, ⟨_, ⟨_, _, ⟨⟨rfl⟩⟩⟩, ⟨⟨rfl⟩⟩⟩, ⟨_, ⟨n, α, c⟩, ⟨⟨h⟩⟩⟩ =>
+      A.castSquare ((Paths.flatten_map_mapPath_of n).symm.trans
+        ((congrArg (Paths.flatten R).map
+          (eq_of_heq (PathSquare.mapPath_heq_of_restrict_id _ c))).trans h)) rfl rfl α
+
+/-- The inverse of the associator of Kleisli composition. It unzips the chain of a square of
+`A.comp (B.comp C)` into a chain of `B` and a chain of chains of `C`, and concatenates the
+latter. -/
+def associatorInv {P : Type u₁} {Q : Type u₂} {R : Type u₃} {S : Type u₄}
+    [Quiver.{v₁} P] [Quiver.{v₂} Q] [Quiver.{v₃} R] [Quiver.{v₄} S]
+    (A : KleisliSpan P Q) (B : KleisliSpan Q R) (C : KleisliSpan R S) :
+    Hom (A.comp (B.comp C)) ((A.comp B).comp C) where
+  map_arr
+    | ⟨_, ⟨_, a, ⟨_, ⟨_, b, c⟩, ⟨⟨rfl⟩⟩⟩⟩, ⟨⟨rfl⟩⟩⟩ =>
+      ⟨_, ⟨_, ⟨_, ⟨_, a, b⟩, ⟨⟨rfl⟩⟩⟩, c⟩, ⟨⟨rfl⟩⟩⟩
+  map_square {_ _ _ _ _ _ a b} := fun s =>
+    match a, b, s with
+    | ⟨_, ⟨_, _, ⟨_, ⟨_, _, _⟩, ⟨⟨rfl⟩⟩⟩⟩, ⟨⟨rfl⟩⟩⟩,
+        ⟨_, ⟨_, _, ⟨_, ⟨_, _, _⟩, ⟨⟨rfl⟩⟩⟩⟩, ⟨⟨rfl⟩⟩⟩, ⟨_, ⟨n, α, βγ⟩, ⟨⟨h⟩⟩⟩ =>
+      ⟨_, ⟨_, ⟨_, ⟨n, α, (PathSquare.unzip (PathSquare.unzip βγ).2.1).2.1⟩, ⟨⟨rfl⟩⟩⟩,
+        (PathSquare.unzip (PathSquare.unzip βγ).2.1).2.2.flatten⟩,
+        ⟨⟨(Paths.flatten_assoc _).trans ((congrArg (Paths.flatten S).map (eq_of_heq
+          (PathSquare.mapPath_heq_of_restrict_id _ (PathSquare.unzip βγ).2.2))).trans h)⟩⟩⟩
+
 /-- A Kleisli cell with unary source `A`, target `B`, and vertical sides `f` and `g`: a square
 from `A` to `B` over `f` and `Paths.map g`. -/
 abbrev Cell {Q : Type u₁} {R : Type u₂} {Q' : Type u₃} {R' : Type u₄}
     [Quiver.{v₁} Q] [Quiver.{v₂} R] [Quiver.{v₃} Q'] [Quiver.{v₄} R']
     (A : KleisliSpan Q R) (B : KleisliSpan Q' R') (f : Q ⥤q Q') (g : R ⥤q R') :=
   Square A B f (Paths.map g)
+
+namespace Cell
+
+/-- The identity Kleisli cell. It transports squares along `Prefunctor.mapPath_id`. -/
+protected def id {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : KleisliSpan.{u₁, v₁, u₂, v₂, w, z} Q R) : Cell A A (𝟭q Q) (𝟭q R) where
+  map_arr a := a
+  map_square {_ _ _ _ _ p _ _} α := A.castSquare (Prefunctor.mapPath_id p).symm rfl rfl α
+
+/-- Vertical composition of Kleisli cells. It transports squares along
+`Prefunctor.mapPath_comp_apply`. -/
+def vComp {Q₀ : Type u₁} {R₀ : Type u₂} {Q₁ : Type u₃} {R₁ : Type u₄} {Q₂ : Type*}
+    {R₂ : Type*} [Quiver.{v₁} Q₀] [Quiver.{v₂} R₀] [Quiver.{v₃} Q₁] [Quiver.{v₄} R₁]
+    [Quiver Q₂] [Quiver R₂] {A : KleisliSpan Q₀ R₀} {B : KleisliSpan Q₁ R₁}
+    {C : KleisliSpan Q₂ R₂} {F : Q₀ ⥤q Q₁} {G : R₀ ⥤q R₁} {F' : Q₁ ⥤q Q₂} {G' : R₁ ⥤q R₂}
+    (f : Cell A B F G) (g : Cell B C F' G') : Cell A C (F ⋙q F') (G ⋙q G') where
+  map_arr a := g.map_arr (f.map_arr a)
+  map_square {_ _ _ _ _ p _ _} α :=
+    C.castSquare (G.mapPath_comp_apply G' p).symm rfl rfl (g.map_square (f.map_square α))
+
+theorem id_map_square_heq {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : KleisliSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : R} {e : x ⟶ x'}
+    {p : Quiver.Path y y'} {a : A.arr x y} {b : A.arr x' y'} (α : A.square e p a b) :
+    (Cell.id A).map_square α ≍ α :=
+  A.castSquare_heq (Prefunctor.mapPath_id p).symm rfl rfl α
+
+theorem vComp_map_square_heq {Q₀ : Type u₁} {R₀ : Type u₂} {Q₁ : Type u₃} {R₁ : Type u₄}
+    {Q₂ : Type*} {R₂ : Type*} [Quiver.{v₁} Q₀] [Quiver.{v₂} R₀] [Quiver.{v₃} Q₁]
+    [Quiver.{v₄} R₁] [Quiver Q₂] [Quiver R₂] {A : KleisliSpan Q₀ R₀} {B : KleisliSpan Q₁ R₁}
+    {C : KleisliSpan Q₂ R₂} {F : Q₀ ⥤q Q₁} {G : R₀ ⥤q R₁} {F' : Q₁ ⥤q Q₂} {G' : R₁ ⥤q R₂}
+    (f : Cell A B F G) (g : Cell B C F' G') {x x' : Q₀} {y y' : R₀} {e : x ⟶ x'}
+    {p : Quiver.Path y y'} {a : A.arr x y} {b : A.arr x' y'} (α : A.square e p a b) :
+    (f.vComp g).map_square α ≍ g.map_square (f.map_square α) :=
+  C.castSquare_heq (G.mapPath_comp_apply G' p).symm rfl rfl _
+
+theorem id_map_chain_heq {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : KleisliSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : Paths R}
+    {n : Quiver.Path x x'} {m : Quiver.Path y y'} {a : A.arr x y} {b : A.arr x' y'}
+    (β : PathSquare A a n m b) : β.map (Cell.id A) ≍ β := by
+  induction β with
+  | nil => rfl
+  | cons β t ih =>
+    exact PathSquare.cons_heq_cons (Prefunctor.mapPath_id _) (Paths.mapPath_map_id _) rfl
+      (Prefunctor.mapPath_id _) ih (id_map_square_heq A t)
+
+theorem vComp_map_chain_heq {Q₀ : Type u₁} {R₀ : Type u₂} {Q₁ : Type u₃} {R₁ : Type u₄}
+    {Q₂ : Type*} {R₂ : Type*} [Quiver.{v₁} Q₀] [Quiver.{v₂} R₀] [Quiver.{v₃} Q₁]
+    [Quiver.{v₄} R₁] [Quiver Q₂] [Quiver R₂] {A : KleisliSpan Q₀ R₀} {B : KleisliSpan Q₁ R₁}
+    {C : KleisliSpan Q₂ R₂} {F : Q₀ ⥤q Q₁} {G : R₀ ⥤q R₁} {F' : Q₁ ⥤q Q₂} {G' : R₁ ⥤q R₂}
+    (f : Cell A B F G) (g : Cell B C F' G') {x x' : Q₀} {y y' : Paths R₀}
+    {n : Quiver.Path x x'} {m : Quiver.Path y y'} {a : A.arr x y} {b : A.arr x' y'}
+    (β : PathSquare A a n m b) : β.map (f.vComp g) ≍ (β.map f).map g := by
+  induction β with
+  | nil => rfl
+  | cons β t ih =>
+    exact PathSquare.cons_heq_cons (Prefunctor.mapPath_comp_apply _ _ _)
+      (Paths.mapPath_map_comp _ _ _) rfl (Prefunctor.mapPath_comp_apply _ _ _) ih
+      (vComp_map_square_heq f g t)
+
+end Cell
 
 /-- A Kleisli cell with nullary source, target `A` and identity vertical sides: a morphism out
 of the Kleisli identity. -/
@@ -102,12 +235,6 @@ def square {x x' : Q} (e : x ⟶ x') :
     A.square e ((Paths.of Q).map e) (η.arr x) (η.arr x') :=
   η.map_square ⟨⟨rfl⟩⟩
 
-/-- The chain of the squares `η.square` along a path. -/
-def chain {x : Q} : {x' : Q} → (p : Quiver.Path x x') →
-    PathSquare A (η.arr x) p ((Paths.of Q).mapPath p) (η.arr x')
-  | _, .nil => .nil
-  | _, .cons p e => .cons (chain p) (η.square e)
-
 end NullaryCell
 
 namespace BinaryCell
@@ -127,17 +254,6 @@ def square {x x' : P} {y y' : Q} {z z' : R} {e : x ⟶ x'} {n : Quiver.Path y y'
     {c : B.arr y z} {d : B.arr y' z'} (α : A.square e n a b) (β : PathSquare B c n m d) :
     C.square e ((Paths.flatten R).map m) (μ.arr a c) (μ.arr b d) :=
   μ.map_square ⟨m, ⟨n, α, β⟩, ⟨⟨rfl⟩⟩⟩
-
-/-- A binary cell along a chain `β` of squares of `A` and a chain of chains `γ` of squares of
-`B`, applying `μ.square` to each square of `β` and the corresponding chain of `γ`. -/
-def chain {x : P} {y : Paths Q} {z : Paths R} {a : A.arr x y} {c : B.arr y z} :
-    {x' : P} → {y' : Paths Q} → {z' : Paths R} → {n : Quiver.Path x x'} →
-      {m : Quiver.Path y y'} → {L : Quiver.Path (V := Paths (Paths R)) z z'} →
-      {b : A.arr x' y'} → {d : B.arr y' z'} →
-      PathSquare A a n m b → PathSquare (paths B) c m L d →
-        PathSquare C (μ.arr a c) n ((Paths.flatten R).mapPath L) (μ.arr b d)
-  | _, _, _, _, _, _, _, _, .nil, .nil => .nil
-  | _, _, _, _, _, _, _, _, .cons β t, .cons γ u => .cons (chain β γ) (μ.square t u)
 
 end BinaryCell
 

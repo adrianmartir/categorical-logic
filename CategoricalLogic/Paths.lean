@@ -223,6 +223,53 @@ theorem cons_heq_cons {x x' x'' : Q} {y y' y'' : R} {a : A.arr x y} {b : A.arr x
 
 end PathSquare
 
+namespace PathSquare
+
+variable {P : Type u₁} {Q : Type u₂} {R : Type u} [Quiver.{v₁} P] [Quiver.{v₂} Q] [Quiver.{v} R]
+
+/-- A chain of squares of a binary horizontal composite unzips into a chain of each factor. -/
+def unzip {A : QuiverSpan P Q} {B : QuiverSpan Q R} {x : P} {y : R}
+    {a : (QuiverSpan.comp A B).arr x y} :
+    {x' : P} → {y' : R} → {p : Quiver.Path x x'} → {q : Quiver.Path y y'} →
+      {b : (QuiverSpan.comp A B).arr x' y'} → PathSquare (QuiverSpan.comp A B) a p q b →
+      (QuiverSpan.comp (paths A) (paths B)).square p q a b
+  | _, _, _, _, _, .nil => ⟨.nil, .nil, .nil⟩
+  | _, _, _, _, _, .cons s t =>
+      ⟨(unzip s).1.cons t.1, (unzip s).2.1.cons t.2.1, (unzip s).2.2.cons t.2.2⟩
+
+/-- A chain of squares of the horizontal identity restricted along `F` on the left lies over
+`p` and `F.mapPath p`. -/
+theorem mapPath_heq_of_restrict_id (F : P ⥤q R) {x x' : P} {y y' : R}
+    {a : ((QuiverSpan.id R).restrict F (𝟭q R)).arr x y} {p : Quiver.Path x x'}
+    {q : Quiver.Path y y'} {b : ((QuiverSpan.id R).restrict F (𝟭q R)).arr x' y'}
+    (c : PathSquare ((QuiverSpan.id R).restrict F (𝟭q R)) a p q b) : F.mapPath p ≍ q := by
+  induction c with
+  | nil =>
+    obtain ⟨⟨h⟩⟩ := a
+    cases h
+    rfl
+  | cons s t ih =>
+    rename_i b c
+    obtain ⟨⟨ha⟩⟩ := a
+    cases ha
+    obtain ⟨⟨hb⟩⟩ := b
+    cases hb
+    obtain ⟨⟨hc⟩⟩ := c
+    cases hc
+    obtain ⟨⟨ht⟩⟩ := t
+    cases ht
+    obtain rfl := eq_of_heq ih
+    rfl
+
+end PathSquare
+
+/-- The comparison cell of `Paths` for binary horizontal composition. -/
+def pathsComp {P : Type u₁} {Q : Type u₂} {R : Type u} [Quiver.{v₁} P] [Quiver.{v₂} Q]
+    [Quiver.{v} R] (A : QuiverSpan P Q) (B : QuiverSpan Q R) :
+    Hom (paths (QuiverSpan.comp A B)) (QuiverSpan.comp (paths A) (paths B)) where
+  map_arr a := a
+  map_square s := PathSquare.unzip s
+
 /-! ### Cells -/
 
 namespace PathSquare
