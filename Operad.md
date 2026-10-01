@@ -150,11 +150,7 @@ The `PathsKleisli.lean` module should contain the Kleisli virtual double categor
 `Paths`. Virtual double categories are the monoids there, but they get their own module.
 
 **Kleisli spans and their composition.**
-* A Kleisli span from `Q` to `R` is a quiver span from `Q` to `Paths R`. There is no separate
-  type: as an abbreviation its apex universes could not be told apart from its type, which the
-  universe linter rightly flags. The operations below live in the namespace `KleisliSpan` and
-  are called by their full names, since the dot notation `A.comp` on a quiver span is
-  horizontal composition.
+* A Kleisli span from `Q` to `R` is a quiver span from `Q` to `Paths R` (`KleisliSpan`).
 * The Kleisli identity (`KleisliSpan.id`): the restriction of the horizontal identity on
   `Paths Q` along `Paths.of Q`, which makes the unit of the monad visible in the definition
   instead of buried in it. Its arrows are equations `(Paths.of Q).obj x = (𝟭q _).obj y`, so

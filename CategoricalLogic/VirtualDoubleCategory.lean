@@ -46,7 +46,7 @@ edges of `Q`: a monoid in the Kleisli virtual double category of `Paths`, withou
 See the module docstring for the dictionary. -/
 structure VirtualDoubleCategoryStruct (Q : Type u) [Quiver.{v} Q] where
   /-- The arrows and the cells. -/
-  hom : QuiverSpan.{u, v, u, max u v, w, z} Q (Paths Q)
+  hom : KleisliSpan.{u, v, u, v, w, z} Q Q
   /-- The unit of the monoid: identity arrows and identity cells. -/
   id : KleisliSpan.NullaryCell hom
   /-- The multiplication of the monoid: composition of arrows and substitution of cells. -/
@@ -102,7 +102,7 @@ instance (C : Paths SpanQuiv.{u, v}) : Quiver.{max u v} C.α := SpanQuiv.str' C
 /-- The Kleisli span of the virtual double category of quivers, prefunctors and quiver spans.
 Its arrows from `r` to `q` are the prefunctors `r ⥤q q`, and its cells with source a path `p`
 of spans and target a span `A` are the multisquares `MultiSquare p A`. -/
-def hom : QuiverSpan SpanQuiv.{u, v} (Paths SpanQuiv.{u, v}) where
+def hom : KleisliSpan SpanQuiv.{u, v} SpanQuiv.{u, v} where
   arr q r := r.α ⥤q q.α
   square A p f f' := MultiSquare p A f f'
 
