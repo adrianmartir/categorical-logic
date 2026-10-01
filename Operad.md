@@ -242,7 +242,8 @@ Elementwise it is naturality in arrows and the paper's `θ_q (Fα) = (Gα)(θ_{p
   `T`.
 
 **Example.** Quivers, prefunctors and quiver spans form a virtual double category, whose data
-is `SpanQuiv.hom`, `SpanQuiv.id` and `SpanQuiv.comp` (the monoid laws are not proved yet). Its arrows from `r` to `q` are the prefunctors
+is `SpanQuiv.hom`, `SpanQuiv.id` and `SpanQuiv.comp`, and which is
+`SpanQuiv.virtualDoubleCategory` in `SpanQuiv.lean`. Its arrows from `r` to `q` are the prefunctors
 `r ⥤q q`, composition of arrows is diagrammatic composition of prefunctors, the identity cell
 on a span is the left unitor, and substitution is n-ary horizontal composition
 (`SpanQuiv.hCompPath`) followed by vertical composition. It lands one universe up.

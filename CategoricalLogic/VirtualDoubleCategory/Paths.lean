@@ -12,10 +12,10 @@ public import Mathlib.CategoryTheory.PathCategory.Basic
 /-!
 # The paths monad
 
-`Paths` should be thought of as a monad on the virtual double category of quivers,
-prefunctors and quiver spans. As in `CategoricalLogic.VirtualDoubleCategory.QuiverSpan`, this is a guiding principle
-and not an instance: we never state what a monad on a virtual double category is here. Instead
-each definition says in its docstring which piece of the monad structure it is.
+`Paths` should be thought of as a monad on the virtual double category of quivers, prefunctors and
+quiver spans. As in `CategoricalLogic.VirtualDoubleCategory.QuiverSpan`, this is a guiding principle
+and not an instance: we never state what a monad on a virtual double category is here. Instead each
+definition says in its docstring which piece of the monad structure it is.
 
 We only build what the Kleisli virtual double category of `Paths` and the laws of virtual
 double categories use. In particular the comparison cell for binary horizontal composition is

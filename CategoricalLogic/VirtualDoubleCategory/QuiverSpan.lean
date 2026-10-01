@@ -42,7 +42,8 @@ prefunctors `F`, `G` from the feet of `A` to the feet of `B`.
   morphisms of spans.
 * `QuiverSpan.restrict`: restriction of a span along prefunctors.
 * `QuiverSpan.id`, `QuiverSpan.comp`, `QuiverSpan.Square.hComp`: horizontal composition.
-* `SpanQuiv.composePath`: n-ary horizontal composition along a path of spans.
+* `SpanQuiv.composePath`: n-ary horizontal composition along a path of spans, and
+  `SpanQuiv.composePathCompInv`, splitting it along a concatenation, with its coherence.
 * `SpanQuiv.MultiSquare`: squares with n-ary source.
 -/
 
@@ -129,6 +130,23 @@ def vComp {Q Q' R R' S S' : Type*}
   map_square s' := t.map_square (s.map_square s')
 
 end Square
+
+/-- Congruence for a function of a dependent pair. -/
+theorem heq_dcongr {α : Sort*} {β : α → Sort*} {γ : α → Sort*} (f : (a : α) → β a → γ a)
+    {a a' : α} (h : a = a') {b : β a} {b' : β a'} (hb : b ≍ b') : f a b ≍ f a' b' := by
+  subst h
+  obtain rfl := eq_of_heq hb
+  rfl
+
+/-- Congruence for vertical composition along equal sources. -/
+theorem Square.vComp_heq_vComp {Q R S T : Type*} [Quiver Q] [Quiver R] [Quiver S] [Quiver T]
+    {A A' : QuiverSpan Q R} {B : QuiverSpan S T} {Q' R' : Type*} [Quiver Q'] [Quiver R']
+    {C : QuiverSpan Q' R'} {F : Q ⥤q S} {G : R ⥤q T} {F' : S ⥤q Q'} {G' : T ⥤q R'}
+    (hA : A = A') {K : QuiverSpan.Square A B F G} {K' : QuiverSpan.Square A' B F G}
+    (hK : K ≍ K') (t : QuiverSpan.Square B C F' G') : Square.vComp K t ≍ Square.vComp K' t := by
+  subst hA
+  obtain rfl := eq_of_heq hK
+  rfl
 
 /-- Squares are determined by their actions on arrows and on squares. -/
 @[ext]
@@ -279,6 +297,33 @@ def associator {P Q R S : Type*} [Quiver P] [Quiver Q] [Quiver R] [Quiver S]
   map_arr a := ⟨a.2.1.1, a.2.1.2.1, a.1, a.2.1.2.2, a.2.2⟩
   map_square s := ⟨s.2.1.1, s.2.1.2.1, s.1, s.2.1.2.2, s.2.2⟩
 
+/-- The associator followed by the left unitor is the left unitor on the first factor. -/
+theorem associator_leftUnitor {Q R S : Type*} [Quiver Q] [Quiver R] [Quiver S]
+    (A : QuiverSpan Q R) (B : QuiverSpan R S) :
+    Square.vComp (associator (QuiverSpan.id Q) A B) (leftUnitor _) =
+      Square.hComp (leftUnitor A) (Square.id B) := by
+  refine Square.ext (fun a => ?_) (fun {_ _ _ _ _ _ a b} t => ?_)
+  · obtain ⟨_, ⟨_, ⟨⟨rfl⟩⟩, _⟩, _⟩ := a
+    rfl
+  · obtain ⟨_, ⟨_, ⟨⟨rfl⟩⟩, _⟩, _⟩ := a
+    obtain ⟨_, ⟨_, ⟨⟨rfl⟩⟩, _⟩, _⟩ := b
+    obtain ⟨_, ⟨_, ⟨⟨rfl⟩⟩, _⟩, _⟩ := t
+    rfl
+
+/-- Naturality of the left unitor. -/
+theorem leftUnitor_naturality {Q R Q' R' : Type*} [Quiver Q] [Quiver R] [Quiver Q']
+    [Quiver R'] {A : QuiverSpan Q R} {B : QuiverSpan Q' R'} {F : Q ⥤q Q'} {G : R ⥤q R'}
+    (t : Square A B F G) :
+    Square.vComp (Square.hComp (Square.hId F) t) (leftUnitor B) =
+      Square.vComp (leftUnitor A) t := by
+  refine Square.ext (fun a => ?_) (fun {_ _ _ _ _ _ a b} u => ?_)
+  · obtain ⟨_, ⟨⟨rfl⟩⟩, _⟩ := a
+    rfl
+  · obtain ⟨_, ⟨⟨rfl⟩⟩, _⟩ := a
+    obtain ⟨_, ⟨⟨rfl⟩⟩, _⟩ := b
+    obtain ⟨_, ⟨⟨rfl⟩⟩, _⟩ := u
+    rfl
+
 end QuiverSpan
 
 /-! ### n-ary horizontal composition -/
@@ -342,6 +387,58 @@ def composePathCompInv {q r : SpanQuiv.{u, v}} (p : Quiver.Path q r) :
       QuiverSpan.Square.vComp
         (QuiverSpan.Square.hComp (composePathCompInv p p') (QuiverSpan.Square.id e))
         (QuiverSpan.associator _ _ _)
+
+open QuiverSpan.Square (vComp hComp)
+
+/-- Splitting the composite of `nil.comp p` and removing the empty factor is the identity. -/
+theorem composePathCompInv_nil_leftUnitor {q q' : SpanQuiv.{u, v}} (p : Quiver.Path q q') :
+    vComp (composePathCompInv .nil p) (QuiverSpan.leftUnitor (composePath p)) ≍
+      QuiverSpan.Square.id (composePath p) := by
+  induction p with
+  | nil =>
+    refine heq_of_eq (QuiverSpan.Square.ext (fun a => ?_) (fun {_ _ _ _ _ _ a b} t => ?_))
+    · obtain ⟨⟨rfl⟩⟩ := a
+      rfl
+    · obtain ⟨⟨rfl⟩⟩ := a
+      obtain ⟨⟨rfl⟩⟩ := b
+      obtain ⟨⟨rfl⟩⟩ := t
+      rfl
+  | cons p e ih =>
+    refine (heq_of_eq (congrArg
+      (vComp (hComp (composePathCompInv .nil p) (QuiverSpan.Square.id e)))
+      (QuiverSpan.associator_leftUnitor (composePath p) e))).trans ?_
+    exact QuiverSpan.heq_dcongr
+      (fun (P : Quiver.Path q _) (K : QuiverSpan.Hom (composePath P) (composePath p)) =>
+        hComp K (QuiverSpan.Square.id e)) (Quiver.Path.nil_comp p) ih
+
+/-- Coherence of splitting composites along concatenations with the associator. -/
+theorem composePathCompInv_assoc {q r s : SpanQuiv.{u, v}} (X : Quiver.Path q r)
+    (Y : Quiver.Path r s) {t : SpanQuiv.{u, v}} (P : Quiver.Path s t) :
+    vComp (vComp (composePathCompInv (X.comp Y) P)
+        (hComp (composePathCompInv X Y) (QuiverSpan.Square.id _)))
+        (QuiverSpan.associator _ _ _) ≍
+      vComp (composePathCompInv X (Y.comp P))
+        (hComp (QuiverSpan.Square.id _) (composePathCompInv Y P)) := by
+  induction P with
+  | nil => rfl
+  | cons P e ih =>
+    exact QuiverSpan.heq_dcongr
+      (fun (Z : Quiver.Path q _) (K : QuiverSpan.Hom (composePath Z)
+          (QuiverSpan.comp (composePath X) (QuiverSpan.comp (composePath Y) (composePath P)))) =>
+        vComp (vComp (hComp K (QuiverSpan.Square.id e)) (QuiverSpan.associator _ _ _))
+          (hComp (QuiverSpan.Square.id _) (QuiverSpan.associator _ _ _)))
+      (Quiver.Path.comp_assoc X Y P) ih
+
+/-- Congruence for splitting followed by a horizontal composite, along equal paths. -/
+theorem composePathCompInv_hComp_heq {r r' r'' : SpanQuiv.{u, v}} {q q' q'' : SpanQuiv.{u, v}}
+    {Z Z' : Quiver.Path r r'} (hZ : Z = Z') (P : Quiver.Path r' r'') {X : q ⟶ q'}
+    {Y : q' ⟶ q''} {F : r.α ⥤q q.α} {G : r'.α ⥤q q'.α} {H : r''.α ⥤q q''.α}
+    {K : QuiverSpan.Square (composePath Z) X F G} {K' : QuiverSpan.Square (composePath Z') X F G}
+    (hK : K ≍ K') (s : QuiverSpan.Square (composePath P) Y G H) :
+    vComp (composePathCompInv Z P) (hComp K s) ≍ vComp (composePathCompInv Z' P) (hComp K' s) := by
+  subst hZ
+  obtain rfl := eq_of_heq hK
+  rfl
 
 /-- A square with n-ary source: a square out of the horizontal composite of the path `p` of
 spans into the span `A`, with vertical sides `F` and `G`. -/

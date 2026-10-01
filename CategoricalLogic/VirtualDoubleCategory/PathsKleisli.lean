@@ -16,8 +16,9 @@ framework for generalized multicategories*: a horizontal arrow from `Q` to `R` i
 from `Q` to `Paths R`. Virtual double categories are the monoids here; they are defined in
 `CategoricalLogic.VirtualDoubleCategory.Basic`.
 
-Following the orientation of `CategoricalLogic.VirtualDoubleCategory.QuiverSpan`, the right leg `Paths R` carries the
-sources: a square of a Kleisli span has a single edge as target and a path as source.
+Following the orientation of `CategoricalLogic.VirtualDoubleCategory.QuiverSpan`, the right leg
+`Paths R` carries the sources: a square of a Kleisli span has a single edge as target and a path as
+source.
 
 ## Main definitions
 
