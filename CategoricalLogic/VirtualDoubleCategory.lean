@@ -23,16 +23,27 @@ The dictionary, following the orientation of `CategoricalLogic.QuiverSpan`:
 ## Main definitions
 
 * `VirtualDoubleCategoryStruct`: the data of a virtual double category, and its elementwise
-  accessors `idArr`, `compArr`, `idCell` and `subst`.
-* `VirtualDoubleCategoryStruct.Functor`: the data of a functor of virtual double categories.
+  accessors `idArr`, `compArr`, `idCell`, `idChain`, `subst` and `substChain`. They are the
+  elementwise accessors of nullary and binary Kleisli cells.
+* `VirtualDoubleCategory`: a virtual double category, with its laws stated elementwise.
+* `VirtualDoubleCategoryStruct.Functor`: the data of a functor of virtual double categories,
+  with its identity and composition.
+* `VirtualDoubleCategory.Functor`, `VirtualDoubleCategory.Transformation`: functors of virtual
+  double categories and transformations between them.
+* `VirtualDoubleCategory.Monad`: monads on a virtual double category.
 * `SpanQuiv.virtualDoubleCategoryStruct`: quivers, prefunctors and quiver spans.
+
+## Implementation notes
+
+The boundaries of the two sides of a law about cells agree only propositionally, for instance
+along `Paths.flatten_map_of` or along a law about arrows. Such laws transport one side with
+`QuiverSpan.castSquare`, and `QuiverSpan.eq_castSquare_iff_heq` turns them into heterogeneous
+equations for proofs.
 
 ## TODO
 
-The axioms are not stated yet. They should be stated elementwise through the accessors. For
-arrows they are the usual category axioms. For cells the boundaries agree only propositionally
-(for instance `Quiver.Path.flatten_mapPath_of`), and associativity needs a chain to be split
-along a concatenated path, which is not available yet.
+* Show that quivers, prefunctors and quiver spans satisfy the laws of a virtual double category.
+* Identity transformations, vertical composition and whiskering of transformations.
 -/
 
 namespace CategoryTheory
@@ -57,39 +68,223 @@ namespace VirtualDoubleCategoryStruct
 variable {Q : Type u} [Quiver.{v} Q] (V : VirtualDoubleCategoryStruct.{u, v, w, z} Q)
 
 /-- The identity arrow on `x`, from the unit. -/
-def idArr (x : Q) : x →ᵥ[V.hom] x :=
-  V.id.map_arr ⟨⟨rfl⟩⟩
+abbrev idArr (x : Q) : x →ᵥ[V.hom] x :=
+  V.id.arr x
 
 /-- Composition of arrows in diagrammatic order, from the multiplication. -/
-def compArr {x y z : Q} (f : x →ᵥ[V.hom] y) (g : y →ᵥ[V.hom] z) : x →ᵥ[V.hom] z :=
-  V.mul.map_arr ⟨x, ⟨y, g, f⟩, ⟨⟨rfl⟩⟩⟩
+abbrev compArr {x y z : Q} (f : x →ᵥ[V.hom] y) (g : y →ᵥ[V.hom] z) : x →ᵥ[V.hom] z :=
+  V.mul.arr g f
 
 /-- The identity cell on a proarrow `e`, from the unit: its source is the one-element path on
 `e`, its target is `e`, and its sides are identity arrows. -/
-def idCell {x x' : Q} (e : x ⟶ x') :
+abbrev idCell {x x' : Q} (e : x ⟶ x') :
     V.hom.square e ((Paths.of Q).map e) (V.idArr x) (V.idArr x') :=
-  V.id.map_square ⟨⟨rfl⟩⟩
+  V.id.square e
+
+/-- The chain of identity cells along a path of proarrows. -/
+abbrev idChain {x x' : Q} (p : Quiver.Path x x') :
+    PathSquare V.hom (V.idArr x) p ((Paths.of Q).mapPath p) (V.idArr x') :=
+  V.id.chain p
 
 /-- Substitution of cells, from the multiplication. A cell `α` with source `n` and target `e`,
 together with a chain `β` of cells whose targets spell out `n`, gives a cell with target `e`
 whose source is the concatenation of the sources of the cells in `β`. -/
-def subst {x x' : Q} {y y' : Paths Q} {z z' : Paths (Paths Q)}
+abbrev subst {x x' : Q} {y y' : Paths Q} {z z' : Paths (Paths Q)}
     {e : x ⟶ x'} {n : y ⟶ y'} {m : z ⟶ z'}
     {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'} {c : z →ᵥ[V.hom] y} {d : z' →ᵥ[V.hom] y'}
-    (α : V.hom.square e n a b) (β : (paths V.hom).square n m c d) :
+    (α : V.hom.square e n a b) (β : PathSquare V.hom c n m d) :
     V.hom.square e ((Paths.flatten Q).map m) (V.compArr c a) (V.compArr d b) :=
-  V.mul.map_square ⟨m, ⟨n, α, β⟩, ⟨⟨rfl⟩⟩⟩
+  V.mul.square α β
+
+/-- Substitution along a chain: a chain `β` of cells, and a chain of chains `γ` whose targets
+spell out the sources of the cells in `β`, give the chain of the substitutions. -/
+abbrev substChain {x x' : Q} {y y' : Paths Q} {z z' : Paths (Paths Q)}
+    {n : Quiver.Path x x'} {m : Quiver.Path y y'} {L : Quiver.Path z z'}
+    {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'} {c : z →ᵥ[V.hom] y} {d : z' →ᵥ[V.hom] y'}
+    (β : PathSquare V.hom a n m b) (γ : PathSquare (paths V.hom) c m L d) :
+    PathSquare V.hom (V.compArr c a) n ((Paths.flatten Q).mapPath L) (V.compArr d b) :=
+  V.mul.chain β γ
+
+end VirtualDoubleCategoryStruct
+
+/-- A virtual double category: a monoid in the Kleisli virtual double category of `Paths`.
+
+The laws are stated elementwise. Where the two sides of a law about cells have boundaries that
+agree only propositionally, the right-hand side is transported along the laws for arrows and
+the monad laws of `Paths` with `QuiverSpan.castSquare`.
+
+Associativity of cells is stated for a chain `γ.flatten` concatenated from a chain of chains
+`γ`. Every chain over a concatenated path splits like this, so this is no restriction, and it
+avoids splitting chains. -/
+structure VirtualDoubleCategory (Q : Type u) [Quiver.{v} Q] extends
+    VirtualDoubleCategoryStruct.{u, v, w, z} Q where
+  id_compArr {x y : Q} (f : x →ᵥ[hom] y) :
+    toVirtualDoubleCategoryStruct.compArr (toVirtualDoubleCategoryStruct.idArr x) f = f
+  compArr_id {x y : Q} (f : x →ᵥ[hom] y) :
+    toVirtualDoubleCategoryStruct.compArr f (toVirtualDoubleCategoryStruct.idArr y) = f
+  compArr_assoc {x y z t : Q} (f : x →ᵥ[hom] y) (g : y →ᵥ[hom] z) (h : z →ᵥ[hom] t) :
+    toVirtualDoubleCategoryStruct.compArr (toVirtualDoubleCategoryStruct.compArr f g) h =
+      toVirtualDoubleCategoryStruct.compArr f (toVirtualDoubleCategoryStruct.compArr g h)
+  /-- Substituting a cell into an identity cell gives the cell back. -/
+  idCell_subst {x x' : Q} {y y' : Paths Q} {e : x ⟶ x'} {p : y ⟶ y'}
+      {a : y →ᵥ[hom] x} {b : y' →ᵥ[hom] x'} (α : hom.square e p a b) :
+    toVirtualDoubleCategoryStruct.subst (toVirtualDoubleCategoryStruct.idCell e) (.single α) =
+      hom.castSquare (Paths.flatten_map_of p).symm (compArr_id a).symm (compArr_id b).symm α
+  /-- Substituting identity cells into a cell gives the cell back. -/
+  subst_idChain {x x' : Q} {y y' : Q} {e : x ⟶ x'} {p : Quiver.Path y y'}
+      {a : y →ᵥ[hom] x} {b : y' →ᵥ[hom] x'} (α : hom.square e p a b) :
+    toVirtualDoubleCategoryStruct.subst α (toVirtualDoubleCategoryStruct.idChain p) =
+      hom.castSquare (Paths.flatten_map_mapPath_of p).symm (id_compArr a).symm
+        (id_compArr b).symm α
+  /-- Substitution is associative. -/
+  subst_assoc {x x' : Q} {y y' : Paths Q} {z z' : Paths (Paths Q)}
+      {t t' : Paths (Paths Q)} {e : x ⟶ x'} {n : y ⟶ y'} {m : z ⟶ z'} {L : Quiver.Path t t'}
+      {a : y →ᵥ[hom] x} {b : y' →ᵥ[hom] x'} {c : z →ᵥ[hom] y} {d : z' →ᵥ[hom] y'}
+      {g : t →ᵥ[hom] z} {h : t' →ᵥ[hom] z'} (α : hom.square e n a b)
+      (β : PathSquare hom c n m d) (γ : PathSquare (paths hom) g m L h) :
+    toVirtualDoubleCategoryStruct.subst (toVirtualDoubleCategoryStruct.subst α β) γ.flatten =
+      hom.castSquare (Paths.flatten_assoc (Q := Q) L).symm (compArr_assoc g c a)
+        (compArr_assoc h d b)
+        (toVirtualDoubleCategoryStruct.subst α (toVirtualDoubleCategoryStruct.substChain β γ))
+
+/-! ### Functors -/
+
+namespace VirtualDoubleCategoryStruct
+
+variable {Q : Type u} [Quiver.{v} Q] {R : Type u₁} [Quiver.{v₁} R]
+  {S : Type u₂} [Quiver.{v₂} S]
 
 /-- The data of a functor of virtual double categories, without its axioms: a prefunctor on
 objects and proarrows, and a Kleisli cell over it acting on arrows and cells. -/
-structure Functor {R : Type u₁} [Quiver.{v₁} R] (V : VirtualDoubleCategoryStruct.{u, v, w, z} Q)
+structure Functor (V : VirtualDoubleCategoryStruct.{u, v, w, z} Q)
     (W : VirtualDoubleCategoryStruct.{u₁, v₁, w', z'} R) where
   /-- The action on objects and proarrows. -/
   obj : Q ⥤q R
   /-- The action on arrows and cells. -/
   map : KleisliSpan.Cell V.hom W.hom obj obj
 
+namespace Functor
+
+variable {V : VirtualDoubleCategoryStruct.{u, v, w, z} Q}
+  {W : VirtualDoubleCategoryStruct.{u₁, v₁, w', z'} R} (F : Functor V W)
+
+/-- The action of a functor on arrows. -/
+abbrev mapArr {x y : Q} (a : x →ᵥ[V.hom] y) : F.obj.obj x →ᵥ[W.hom] F.obj.obj y :=
+  F.map.map_arr a
+
+/-- The action of a functor on cells: on the n-ary source it acts through
+`Prefunctor.mapPath`. -/
+abbrev mapSquare {x x' : Q} {y y' : Q} {e : x ⟶ x'} {p : Quiver.Path y y'}
+    {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'} (α : V.hom.square e p a b) :
+    W.hom.square (F.obj.map e) (F.obj.mapPath p) (F.mapArr a) (F.mapArr b) :=
+  F.map.map_square α
+
+/-- The action of a functor on chains of cells. -/
+abbrev mapChain {x x' : Q} {y y' : Paths Q} {n : Quiver.Path x x'} {m : Quiver.Path y y'}
+    {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'} (β : PathSquare V.hom a n m b) :
+    PathSquare W.hom (F.mapArr a) (F.obj.mapPath n) ((Paths.map F.obj).mapPath m)
+      (F.mapArr b) :=
+  β.map F.map
+
+/-- The identity functor. It transports cells along `Prefunctor.mapPath_id`. -/
+@[simps obj]
+protected def id (V : VirtualDoubleCategoryStruct.{u, v, w, z} Q) : Functor V V where
+  obj := 𝟭q Q
+  map :=
+    { map_arr a := a
+      map_square {_ _ _ _ _ p _ _} α := V.hom.castSquare (Prefunctor.mapPath_id p).symm rfl rfl α }
+
+/-- Composition of functors, in diagrammatic order. It transports cells along
+`Prefunctor.mapPath_comp_apply`. -/
+@[simps obj]
+def comp {U : VirtualDoubleCategoryStruct.{u₂, v₂, w, z} S} (G : Functor W U) :
+    Functor V U where
+  obj := F.obj ⋙q G.obj
+  map :=
+    { map_arr a := G.mapArr (F.mapArr a)
+      map_square {_ _ _ _ _ p _ _} α :=
+        U.hom.castSquare (Prefunctor.mapPath_comp_apply F.obj G.obj p).symm rfl rfl
+          (G.mapSquare (F.mapSquare α)) }
+
+end Functor
+
 end VirtualDoubleCategoryStruct
+
+namespace VirtualDoubleCategory
+
+variable {Q : Type u} [Quiver.{v} Q] {R : Type u₁} [Quiver.{v₁} R]
+
+/-- A functor of virtual double categories: it preserves identity arrows, composition of
+arrows, identity cells and substitution. -/
+structure Functor (V : VirtualDoubleCategory.{u, v, w, z} Q)
+    (W : VirtualDoubleCategory.{u₁, v₁, w', z'} R) extends
+    VirtualDoubleCategoryStruct.Functor V.toVirtualDoubleCategoryStruct
+      W.toVirtualDoubleCategoryStruct where
+  map_idArr (x : Q) : toFunctor.mapArr (V.idArr x) = W.idArr (obj.obj x)
+  map_compArr {x y z : Q} (f : x →ᵥ[V.hom] y) (g : y →ᵥ[V.hom] z) :
+    toFunctor.mapArr (V.compArr f g) = W.compArr (toFunctor.mapArr f) (toFunctor.mapArr g)
+  map_idCell {x x' : Q} (e : x ⟶ x') :
+    toFunctor.mapSquare (V.idCell e) =
+      W.hom.castSquare rfl (map_idArr x).symm (map_idArr x').symm (W.idCell (obj.map e))
+  map_subst {x x' : Q} {y y' : Paths Q} {z z' : Paths (Paths Q)}
+      {e : x ⟶ x'} {n : y ⟶ y'} {m : z ⟶ z'}
+      {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'} {c : z →ᵥ[V.hom] y} {d : z' →ᵥ[V.hom] y'}
+      (α : V.hom.square e n a b) (β : PathSquare V.hom c n m d) :
+    toFunctor.mapSquare (V.subst α β) =
+      W.hom.castSquare (Paths.flatten_naturality obj m).symm (map_compArr c a).symm
+        (map_compArr d b).symm (W.subst (toFunctor.mapSquare α) (toFunctor.mapChain β))
+
+/-- A transformation between functors `F` and `G` of virtual double categories: an arrow from
+`F x` to `G x` for every object `x` and a cell from `F e` to `G e` for every proarrow `e`,
+natural in arrows and in cells. -/
+structure Transformation {V : VirtualDoubleCategory.{u, v, w, z} Q}
+    {W : VirtualDoubleCategory.{u₁, v₁, w', z'} R}
+    (F G : VirtualDoubleCategoryStruct.Functor V.toVirtualDoubleCategoryStruct
+      W.toVirtualDoubleCategoryStruct) where
+  /-- The component at an object. -/
+  app (x : Q) : F.obj.obj x →ᵥ[W.hom] G.obj.obj x
+  /-- The component at a proarrow: a cell with unary source `F e` and target `G e`. -/
+  cell {x x' : Q} (e : x ⟶ x') :
+    W.hom.square (G.obj.map e) ((Paths.of R).map (F.obj.map e)) (app x) (app x')
+  naturality {x y : Q} (a : x →ᵥ[V.hom] y) :
+    W.compArr (F.mapArr a) (app y) = W.compArr (app x) (G.mapArr a)
+  /-- Naturality in cells: substituting `F α` into the component at the target of `α` is
+  substituting the components along the source of `α` into `G α`. -/
+  naturality_cell {x x' y y' : Q} {e : x ⟶ x'} {p : Quiver.Path y y'}
+      {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'} (α : V.hom.square e p a b) :
+    W.subst (cell e) (.single (F.mapSquare α)) =
+      W.hom.castSquare
+        ((Paths.flatten_map_mapPath_comp_of F.obj p).trans (Paths.flatten_map_of _).symm)
+        (naturality a).symm (naturality b).symm
+        (W.subst (G.mapSquare α) (.ofPath G.obj (F.obj ⋙q Paths.of R) app cell p))
+
+/-- A monad on a virtual double category: an endofunctor `T` with a unit `η : 1 ⟶ T` and a
+multiplication `μ : T T ⟶ T`, satisfying the unit laws `μ ∘ ηT = 1` and `μ ∘ Tη = 1` and
+associativity `μ ∘ Tμ = μ ∘ μT`. The laws are stated componentwise, on objects and on
+proarrows. -/
+structure Monad (V : VirtualDoubleCategory.{u, v, w, z} Q) where
+  /-- The endofunctor. -/
+  T : Functor V V
+  /-- The unit. -/
+  η : Transformation (.id V.toVirtualDoubleCategoryStruct) T.toFunctor
+  /-- The multiplication. -/
+  μ : Transformation (T.toFunctor.comp T.toFunctor) T.toFunctor
+  left_unit (x : Q) : V.compArr (η.app (T.obj.obj x)) (μ.app x) = V.idArr (T.obj.obj x)
+  right_unit (x : Q) : V.compArr (T.mapArr (η.app x)) (μ.app x) = V.idArr (T.obj.obj x)
+  assoc (x : Q) :
+    V.compArr (T.mapArr (μ.app x)) (μ.app x) = V.compArr (μ.app (T.obj.obj x)) (μ.app x)
+  left_unit_cell {x x' : Q} (e : x ⟶ x') :
+    V.subst (μ.cell e) (.single (η.cell (T.obj.map e))) =
+      V.hom.castSquare rfl (left_unit x).symm (left_unit x').symm (V.idCell (T.obj.map e))
+  right_unit_cell {x x' : Q} (e : x ⟶ x') :
+    V.subst (μ.cell e) (.single (T.mapSquare (η.cell e))) =
+      V.hom.castSquare rfl (right_unit x).symm (right_unit x').symm (V.idCell (T.obj.map e))
+  assoc_cell {x x' : Q} (e : x ⟶ x') :
+    V.subst (μ.cell e) (.single (T.mapSquare (μ.cell e))) =
+      V.hom.castSquare rfl (assoc x).symm (assoc x').symm
+        (V.subst (μ.cell e) (.single (μ.cell (T.obj.map e))))
+
+end VirtualDoubleCategory
 
 /-! ### Quivers, prefunctors and quiver spans -/
 
