@@ -103,8 +103,8 @@ layer is the ordinary free category monad on quivers.
   `pathComposition` for the path category, so on edges it is `composePath`, which reduces
   definitionally on `nil` and `cons`.
 * Functoriality, `Paths 𝟭q = 𝟭q` and `Paths (F ⋙q G) = Paths F ⋙q Paths G` (mathlib
-  `mapPath_id` and `mapPath_comp_apply`; `Paths.map_id`, `Paths.map_comp`,
-  `Paths.mapPath_map_id`, `Paths.mapPath_map_comp`). Neither is `rfl`, which is why the two
+  `mapPath_id` and `mapPath_comp_apply`; on paths of paths `Paths.mapPath_map_id` and
+  `Paths.mapPath_map_comp`). Neither is `rfl`, which is why the two
   forms of `Paths` on cells below cannot be collapsed into one. The identity and composite
   functors of virtual double categories use them.
 * Naturality of the unit and of the multiplication in prefunctors (mathlib `mapPath_toPath`)
@@ -124,10 +124,10 @@ layer is the ordinary free category monad on quivers.
   elementwise (`PathSquare.single` and `PathSquare.flatten`). Kleisli composition uses the
   multiplication only in the vertical direction; the multiplication on spans enters through
   the associativity law of virtual double categories.
-* The chain along a path of given squares over its edges (`PathSquare.ofPath`), used by
-  naturality of transformations.
-* Comparison cells for the horizontal identity and for binary horizontal composition, and
-  their inverses (not needed). They are what associativity and unitality of Kleisli
+* Unzipping a chain of a binary horizontal composite into a chain of each factor
+  (`PathSquare.unzip`): the comparison cell for binary horizontal composition, elementwise.
+  The inverse associator of Kleisli composition uses it.
+* The other comparison cells, and their inverses (not needed). They are what associativity and unitality of Kleisli
   composition will need.
 
 **Cells.**
@@ -204,37 +204,41 @@ section, so the module is that definition unfolded and then built upon.
 * The accessors are the elementwise accessors of nullary and binary Kleisli cells
   (`KleisliSpan.NullaryCell.arr`, `.square` and `KleisliSpan.BinaryCell.arr`, `.square`).
 
-**Functors.** A functor from `(Q, A)` to `(R, B)` is a prefunctor `f : Q ⥤q R` together with
-a Kleisli cell from `A` to `B` over `f` and `f`, so a square from `A` to `B` over `f` and
-`Paths f`. It is a single structure `VirtualDoubleCategory.Functor`, data and axioms.
-* Elementwise: maps on objects, proarrows, arrows and cells, where `f` acts on the n-ary
-  source of a cell through `Prefunctor.mapPath`.
-* Axioms: preservation of identity arrows, identity cells and substitution.
-* The identity functor and composition of functors. The monad definition below needs both.
-  Neither is free: the identity functor has to transport cells along
-  `Prefunctor.mapPath_id`, and composition along `Prefunctor.mapPath_comp_apply`. Their
-  Kleisli cells are `KleisliSpan.Cell.id` and `KleisliSpan.Cell.vComp`.
+**Functors.** A functor from `(Q, A)` to `(R, B)` is a morphism of monoids: a prefunctor
+`f : Q ⥤q R` together with a Kleisli cell from `A` to `B` over `f` and `f` (a square from `A`
+to `B` over `f` and `Paths f`), preserving the unit and the multiplication:
+`id ≫ F = idMap f ≫ id` and `mul ≫ F = (F ⊙ F) ≫ mul`. It is one structure,
+`VirtualDoubleCategory.Functor`. This needs, in `PathsKleisli.lean`, the Kleisli identity on a
+prefunctor (`KleisliSpan.idMap`) and horizontal composition of Kleisli cells over prefunctors
+(`KleisliSpan.Cell.hComp`), which uses naturality of `Paths.flatten` as a square
+(`KleisliSpan.flattenMap`).
+* The identity functor and composition of functors, built on `KleisliSpan.Cell.id` and
+  `KleisliSpan.Cell.vComp`. These transport cells along `Prefunctor.mapPath_id` and
+  `Prefunctor.mapPath_comp_apply`, so their laws are proved elementwise, with `Square.ext`, the
+  interchange law `KleisliSpan.Cell.hComp_vComp_map_square_heq` and heterogeneous congruence
+  lemmas.
 
-**Transformations.** A transformation from `F = (f, _)` to `G = (g, _)` consists of
-* for each object `x`, an arrow `θ x` from `f x` to `g x`, i.e. `θ x : B.arr (g x) (f x)`;
-* for each proarrow `e : x ⟶ x'`, a cell of `B` with the one-element path on `f e` as its
-  source, `g e` as its target, and `θ x` and `θ x'` as its side arrows;
-* naturality in arrows: `θ x ∘ F a = G a ∘ θ y` for every arrow `a` from `y` to `x`, both
-  sides being arrows from `f y` to `g x`;
-* cell-naturality: for every cell `α` with n-ary source `p = (p₁, …, pₙ)` and target `e`,
-  substituting `F α` into `θ e` equals substituting `θ p₁, …, θ pₙ` into `G α`. Both sides
-  are cells with source `(f p₁, …, f pₙ)` and target `g e`. This is the paper's
-  `θ_q (Fα) = (Gα)(θ_{p₁} ⊡ ⋯ ⊡ θ_{pₙ})`.
-* Identity transformations, vertical composition, and whiskering by a functor on either
-  side (not done yet). The monad laws below are stated componentwise without them.
+**Transformations.** A transformation from `F = (f, _)` to `G = (g, _)` is a Kleisli cell `θ`
+from the Kleisli identity on `Q` to `B` over `g` and `f`. Its components are an arrow
+`θ x : B.arr (g x) (f x)` for each object and a cell with source `f e` and target `g e` for each
+proarrow. Naturality is one equation of cells out of `A`:
+`λ⁻¹ ≫ (θ ⊙ F) ≫ mul = ρ⁻¹ ≫ (G ⊙ θ) ≫ mul`, with the inverse unitors of Kleisli composition.
+Elementwise it is naturality in arrows and the paper's `θ_q (Fα) = (Gα)(θ_{p₁} ⊡ ⋯ ⊡ θ_{pₙ})`.
+* The components of identity transformations and of vertical composites, as cells
+  (`VirtualDoubleCategory.unitCell`, `VirtualDoubleCategory.compCell`).
+* Identity transformations, vertical composition and whiskering as transformations, with
+  their naturality proofs (not done yet).
 
 **Monads.** A monad on a virtual double category `X` consists of
 * an endofunctor `T` of `X`;
 * a transformation `η` from the identity functor to `T`;
 * a transformation `μ` from `T ∘ T` to `T`;
-* the unit laws `μ ∘ ηT = id` and `μ ∘ Tη = id`, and associativity `μ ∘ Tμ = μ ∘ μT`,
-  componentwise on objects and on proarrows. `η` and `μ` are transformations between the data
-  of functors, so that `T ∘ T` and the identity functor need no proofs to appear in them.
+* the unit laws `μ ∘ ηT = id` and `μ ∘ Tη = id`, and associativity `μ ∘ Tμ = μ ∘ μT`, as
+  equations between the component cells. Whiskering is vertical composition of Kleisli cells
+  (`KleisliSpan.Cell.vComp`) with `KleisliSpan.idMap T` or with the cell of `T`, and the
+  composites are `compCell`. Stated on the component cells, the laws need no comparison of
+  transformations between functors that are only propositionally equal, such as `T ∘ 1` and
+  `T`.
 
 **Example.** Quivers, prefunctors and quiver spans form a virtual double category, whose data
 is `SpanQuiv.hom`, `SpanQuiv.id` and `SpanQuiv.comp` (the monoid laws are not proved yet). Its arrows from `r` to `q` are the prefunctors

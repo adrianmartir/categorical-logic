@@ -74,12 +74,6 @@ def castSquare {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} 
     A.square e e₂ a₂ b₂ :=
   he ▸ ha ▸ hb ▸ s
 
-@[simp] theorem castSquare_rfl {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
-    (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : R} {e : x ⟶ x'}
-    {e' : y ⟶ y'} {a : A.arr x y} {b : A.arr x' y'} (s : A.square e e' a b) :
-    A.castSquare rfl rfl rfl s = s :=
-  rfl
-
 theorem castSquare_heq {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
     (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : R} {e : x ⟶ x'}
     {e₁ e₂ : y ⟶ y'} {a₁ a₂ : A.arr x y} {b₁ b₂ : A.arr x' y'}
@@ -132,13 +126,32 @@ def vComp {Q Q' R R' S S' : Type*}
 
 end Square
 
-theorem Square.map_square_castSquare_heq {Q Q' R R' : Type*} [Quiver Q] [Quiver Q']
-    [Quiver R] [Quiver R'] {A : QuiverSpan Q Q'} {B : QuiverSpan R R'} {F : Q ⥤q R}
-    {G : Q' ⥤q R'} (s : Square A B F G) {x x' : Q} {y y' : Q'} {e : x ⟶ x'}
-    {e₁ e₂ : y ⟶ y'} {a₁ a₂ : A.arr x y} {b₁ b₂ : A.arr x' y'}
-    (he : e₁ = e₂) (ha : a₁ = a₂) (hb : b₁ = b₂) (t : A.square e e₁ a₁ b₁) :
-    s.map_square (A.castSquare he ha hb t) ≍ s.map_square t := by
+/-- Squares are determined by their actions on arrows and on squares. -/
+@[ext]
+theorem Square.ext {Q Q' R R' : Type*} [Quiver Q] [Quiver Q'] [Quiver R] [Quiver R']
+    {A : QuiverSpan Q Q'} {B : QuiverSpan R R'} {F : Q ⥤q R} {G : Q' ⥤q R'}
+    {s t : Square A B F G} (h₁ : ∀ {x y} (a : A.arr x y), s.map_arr a = t.map_arr a)
+    (h₂ : ∀ {x x' y y'} {e : x ⟶ x'} {e' : y ⟶ y'} {a : A.arr x y} {b : A.arr x' y'}
+      (u : A.square e e' a b), s.map_square u ≍ t.map_square u) : s = t := by
+  obtain ⟨sa, ss⟩ := s
+  obtain ⟨ta, ts⟩ := t
+  obtain rfl : @sa = @ta := by
+    funext x y a
+    exact h₁ a
+  obtain rfl : @ss = @ts := by
+    funext x x' y y' e e' a b u
+    exact eq_of_heq (h₂ u)
+  rfl
+
+/-- Congruence for the action of a square on squares, along equal sources and sides. -/
+theorem Square.map_square_heq {Q Q' R R' : Type*} [Quiver Q] [Quiver Q'] [Quiver R]
+    [Quiver R'] {A : QuiverSpan Q Q'} {B : QuiverSpan R R'} {F : Q ⥤q R} {G : Q' ⥤q R'}
+    (s : Square A B F G) {x x' : Q} {y y' : Q'} {e : x ⟶ x'} {e₁ e₂ : y ⟶ y'}
+    {a₁ a₂ : A.arr x y} {b₁ b₂ : A.arr x' y'} (he : e₁ = e₂) (ha : a₁ = a₂) (hb : b₁ = b₂)
+    {u₁ : A.square e e₁ a₁ b₁} {u₂ : A.square e e₂ a₂ b₂} (hu : u₁ ≍ u₂) :
+    s.map_square u₁ ≍ s.map_square u₂ := by
   subst he ha hb
+  obtain rfl := eq_of_heq hu
   rfl
 
 /-- Composition of morphisms of spans. -/
@@ -173,6 +186,41 @@ protected def comp {Q : Type u₁} {R : Type u₂} {S : Type u₃}
   arr x s := Σ y, A.arr x y × B.arr y s
   square e e' a b :=
     Σ m : a.1 ⟶ b.1, A.square e m a.2.1 b.2.1 × B.square m e' a.2.2 b.2.2
+
+/-- Squares of a restriction of a horizontal identity are propositions. -/
+theorem id_restrict_square_heq {Q : Type u₁} {R : Type u₂} {S : Type u₃}
+    [Quiver.{v₁} Q] [Quiver.{v₂} R] [Quiver.{v₃} S] {F : Q ⥤q S} {G : R ⥤q S}
+    {x x' : Q} {y y' : R} {e₁ e₂ : x ⟶ x'} {f₁ f₂ : y ⟶ y'}
+    {a₁ a₂ : ((QuiverSpan.id S).restrict F G).arr x y}
+    {b₁ b₂ : ((QuiverSpan.id S).restrict F G).arr x' y'} (he : e₁ = e₂) (hf : f₁ = f₂)
+    (u₁ : ((QuiverSpan.id S).restrict F G).square e₁ f₁ a₁ b₁)
+    (u₂ : ((QuiverSpan.id S).restrict F G).square e₂ f₂ a₂ b₂) : u₁ ≍ u₂ := by
+  subst he hf
+  obtain ⟨⟨_⟩⟩ := a₁
+  obtain ⟨⟨_⟩⟩ := a₂
+  obtain ⟨⟨_⟩⟩ := b₁
+  obtain ⟨⟨_⟩⟩ := b₂
+  obtain ⟨⟨_⟩⟩ := u₁
+  obtain ⟨⟨_⟩⟩ := u₂
+  rfl
+
+/-- Congruence for squares of a binary horizontal composite. -/
+theorem comp_square_heq {Q : Type u₁} {R : Type u₂} {S : Type u₃}
+    [Quiver.{v₁} Q] [Quiver.{v₂} R] [Quiver.{v₃} S] {A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R}
+    {B : QuiverSpan.{u₂, v₂, u₃, v₃, w', z'} R S} {x x' : Q} {y y' : S} {e₁ e₂ : x ⟶ x'}
+    {f₁ f₂ : y ⟶ y'} {a₁ a₂ : (QuiverSpan.comp A B).arr x y}
+    {b₁ b₂ : (QuiverSpan.comp A B).arr x' y'} {m₁ : a₁.1 ⟶ b₁.1} {m₂ : a₂.1 ⟶ b₂.1}
+    {s₁ : A.square e₁ m₁ a₁.2.1 b₁.2.1} {s₂ : A.square e₂ m₂ a₂.2.1 b₂.2.1}
+    {t₁ : B.square m₁ f₁ a₁.2.2 b₁.2.2} {t₂ : B.square m₂ f₂ a₂.2.2 b₂.2.2}
+    (he : e₁ = e₂) (hf : f₁ = f₂) (ha : a₁ = a₂) (hb : b₁ = b₂) (hm : m₁ ≍ m₂)
+    (hs : s₁ ≍ s₂) (ht : t₁ ≍ t₂) :
+    (⟨m₁, s₁, t₁⟩ : (QuiverSpan.comp A B).square e₁ f₁ a₁ b₁) ≍
+      (⟨m₂, s₂, t₂⟩ : (QuiverSpan.comp A B).square e₂ f₂ a₂ b₂) := by
+  subst he hf ha hb
+  obtain rfl := eq_of_heq hm
+  obtain rfl := eq_of_heq hs
+  obtain rfl := eq_of_heq ht
+  rfl
 
 namespace Square
 

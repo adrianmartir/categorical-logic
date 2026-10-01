@@ -16,8 +16,8 @@ and not an instance: we never state what a monad on a virtual double category is
 each definition says in its docstring which piece of the monad structure it is.
 
 We only build what the Kleisli virtual double category of `Paths` and the laws of virtual
-double categories use. In particular the comparison cells for horizontal composition and the
-monad laws on spans and cells are not here.
+double categories use. In particular the comparison cell for binary horizontal composition is
+only here elementwise (`PathSquare.unzip`), and the monad laws on spans and cells are not here.
 
 ## Main definitions
 
@@ -27,10 +27,13 @@ monad laws on spans and cells are not here.
 * `Paths.flatten_map_of`, `Paths.flatten_map_mapPath_of`, `Paths.flatten_assoc`,
   `Paths.flatten_naturality`: the monad laws and naturality of the multiplication in the vertical
   direction.
+* `Paths.mapPath_map_id`, `Paths.mapPath_map_comp`: functoriality of `Paths.map`, on paths of
+  paths. Neither is `rfl`.
 * `QuiverSpan.PathSquare`, `QuiverSpan.paths`: the functor part in the horizontal direction.
 * `QuiverSpan.PathSquare.single`, `QuiverSpan.PathSquare.flatten`: the unit and the
   multiplication in the horizontal direction, elementwise.
-* `QuiverSpan.PathSquare.ofPath`: the chain along a path of given squares over its edges.
+* `QuiverSpan.PathSquare.unzip`: a chain of a binary horizontal composite, unzipped into a
+  chain of each factor.
 * `QuiverSpan.Square.paths`, `QuiverSpan.Hom.paths`: the functor part on cells.
 -/
 
@@ -49,16 +52,6 @@ Functoriality, `Paths.map (𝟭q Q) = 𝟭q (Paths Q)` and its analogue for comp
 def map {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R] (F : Q ⥤q R) :
     Paths Q ⥤q Paths R :=
   (Cat.freeMap F).toPrefunctor
-
-/-- Functoriality of `Paths` in the vertical direction, on identities. -/
-theorem map_id (Q : Type u) [Quiver.{v} Q] : Paths.map (𝟭q Q) = 𝟭q (Paths Q) :=
-  congrArg Functor.toPrefunctor (Cat.freeMap_id Q)
-
-/-- Functoriality of `Paths` in the vertical direction, on composites. -/
-theorem map_comp {P : Type u} {Q : Type u₁} {R : Type u₂} [Quiver.{v} P] [Quiver.{v₁} Q]
-    [Quiver.{v₂} R] (F : P ⥤q Q) (G : Q ⥤q R) :
-    Paths.map (F ⋙q G) = Paths.map F ⋙q Paths.map G :=
-  congrArg Functor.toPrefunctor (Cat.freeMap_comp F G)
 
 end Paths
 
@@ -84,13 +77,6 @@ theorem flatten_map_mapPath_of {Q : Type u} [Quiver.{v} Q] {x y : Q} (p : Quiver
     change ((flatten Q).map ((Paths.of Q).mapPath p)).comp (Quiver.Hom.toPath e) = _
     rw [ih]
     rfl
-
-/-- `Paths.flatten_map_mapPath_of`, after a prefunctor. -/
-theorem flatten_map_mapPath_comp_of {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q]
-    [Quiver.{v₂} R] (F : Q ⥤q R) {x y : Q} (p : Quiver.Path x y) :
-    (flatten R).map ((F ⋙q Paths.of R).mapPath p) = F.mapPath p :=
-  (congrArg (flatten R).map (F.mapPath_comp_apply (Paths.of R) p)).trans
-    (flatten_map_mapPath_of _)
 
 /-- The other unit law of the monad in the vertical direction: flattening a one-element path of
 paths gives back its only element. -/
@@ -118,8 +104,10 @@ theorem flatten_naturality {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Qu
   induction m with
   | nil => rfl
   | cons m p ih =>
-    exact (F.mapPath_comp _ _).trans (congrArg (fun q : Quiver.Path _ _ => q.comp (F.mapPath p)) ih)
+    exact (F.mapPath_comp _ _).trans
+      (congrArg (fun q : Quiver.Path _ _ => q.comp (F.mapPath p)) ih)
 
+/-- `Paths.map` preserves identities, on paths of paths. -/
 theorem mapPath_map_id {Q : Type u} [Quiver.{v} Q] {x y : Paths Q}
     (m : Quiver.Path x y) : (Paths.map (𝟭q Q)).mapPath m = m := by
   induction m with
@@ -129,6 +117,7 @@ theorem mapPath_map_id {Q : Type u} [Quiver.{v} Q] {x y : Paths Q}
     rw [ih]
     exact congrArg m.cons (Prefunctor.mapPath_id p)
 
+/-- `Paths.map` preserves composites, on paths of paths. -/
 theorem mapPath_map_comp {P : Type u} {Q : Type u₁} {R : Type u₂} [Quiver.{v} P]
     [Quiver.{v₁} Q] [Quiver.{v₂} R] (F : P ⥤q Q) (G : Q ⥤q R) {x y : Paths P}
     (m : Quiver.Path x y) :
@@ -201,14 +190,6 @@ def flatten {x : Q} {y : R} {a : A.arr x y} :
   | _, _, _, _, _, .nil => .nil
   | _, _, _, _, _, .cons s t => (flatten s).comp t
 
-/-- The chain along a path `p` of given squares `s e` over the edges `e` of `p`. -/
-def ofPath {P : Type*} [Quiver P] (F : P ⥤q Q) (G : P ⥤q R)
-    (a : (x : P) → A.arr (F.obj x) (G.obj x))
-    (s : {x x' : P} → (e : x ⟶ x') → A.square (F.map e) (G.map e) (a x) (a x')) {x : P} :
-    {x' : P} → (p : Quiver.Path x x') → PathSquare A (a x) (F.mapPath p) (G.mapPath p) (a x')
-  | _, .nil => .nil
-  | _, .cons p e => .cons (ofPath F G a s p) (s e)
-
 /-- Congruence for `cons` along equal boundary paths and edges. -/
 theorem cons_heq_cons {x x' x'' : Q} {y y' y'' : R} {a : A.arr x y} {b : A.arr x' y'}
     {c : A.arr x'' y''} {e e' : x' ⟶ x''} {f f' : y' ⟶ y''} {p p' : Quiver.Path x x'}
@@ -262,13 +243,6 @@ theorem mapPath_heq_of_restrict_id (F : P ⥤q R) {x x' : P} {y y' : R}
     rfl
 
 end PathSquare
-
-/-- The comparison cell of `Paths` for binary horizontal composition. -/
-def pathsComp {P : Type u₁} {Q : Type u₂} {R : Type u} [Quiver.{v₁} P] [Quiver.{v₂} Q]
-    [Quiver.{v} R] (A : QuiverSpan P Q) (B : QuiverSpan Q R) :
-    Hom (paths (QuiverSpan.comp A B)) (QuiverSpan.comp (paths A) (paths B)) where
-  map_arr a := a
-  map_square s := PathSquare.unzip s
 
 /-! ### Cells -/
 
