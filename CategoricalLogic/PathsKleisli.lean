@@ -23,6 +23,9 @@ sources: a square of a Kleisli span has a single edge as target and a path as so
 * `KleisliSpan.id`, `KleisliSpan.comp`: the Kleisli identity and binary Kleisli composition.
 * `KleisliSpan.Cell`, `KleisliSpan.NullaryCell`, `KleisliSpan.BinaryCell`: cells with unary,
   nullary and binary source.
+* `KleisliSpan.NullaryCell.arr`, `.square`, `.chain` and `KleisliSpan.BinaryCell.arr`,
+  `.square`, `.chain`: nullary and binary cells elementwise, on arrows, on squares and on
+  chains of squares. The accessors of virtual double categories are these.
 -/
 
 namespace CategoryTheory
@@ -81,6 +84,62 @@ abbrev BinaryCell {P : Type u₁} {Q : Type u₂} {R : Type u₃}
     [Quiver.{v₁} P] [Quiver.{v₂} Q] [Quiver.{v₃} R]
     (A : KleisliSpan P Q) (B : KleisliSpan Q R) (C : KleisliSpan P R) :=
   Hom (A.comp B) C
+
+/-! ### Nullary and binary cells, elementwise -/
+
+namespace NullaryCell
+
+variable {Q : Type u} [Quiver.{v} Q] {A : KleisliSpan.{u, v, u, v, w, z} Q Q}
+  (η : NullaryCell A)
+
+/-- The arrow of `A` from `x` to `x` that a nullary cell picks out. -/
+def arr (x : Q) : x →ᵥ[A] x :=
+  η.map_arr ⟨⟨rfl⟩⟩
+
+/-- The square of `A` over an edge `e` that a nullary cell picks out: its source is the
+one-element path on `e`, its target is `e`, and its sides are the arrows `η.arr`. -/
+def square {x x' : Q} (e : x ⟶ x') :
+    A.square e ((Paths.of Q).map e) (η.arr x) (η.arr x') :=
+  η.map_square ⟨⟨rfl⟩⟩
+
+/-- The chain of the squares `η.square` along a path. -/
+def chain {x : Q} : {x' : Q} → (p : Quiver.Path x x') →
+    PathSquare A (η.arr x) p ((Paths.of Q).mapPath p) (η.arr x')
+  | _, .nil => .nil
+  | _, .cons p e => .cons (chain p) (η.square e)
+
+end NullaryCell
+
+namespace BinaryCell
+
+variable {P : Type u₁} {Q : Type u₂} {R : Type u₃}
+  [Quiver.{v₁} P] [Quiver.{v₂} Q] [Quiver.{v₃} R]
+  {A : KleisliSpan P Q} {B : KleisliSpan Q R} {C : KleisliSpan P R} (μ : BinaryCell A B C)
+
+/-- A binary cell on a composable pair of arrows. -/
+def arr {x : P} {y : Q} {z : R} (a : A.arr x y) (b : B.arr y z) : C.arr x z :=
+  μ.map_arr ⟨z, ⟨y, a, b⟩, ⟨⟨rfl⟩⟩⟩
+
+/-- A binary cell on a square `α` of `A` and a chain `β` of squares of `B` whose targets spell
+out the source of `α`. The source of the result is the concatenation of the sources in `β`. -/
+def square {x x' : P} {y y' : Q} {z z' : R} {e : x ⟶ x'} {n : Quiver.Path y y'}
+    {m : Quiver.Path (V := Paths R) z z'} {a : A.arr x y} {b : A.arr x' y'}
+    {c : B.arr y z} {d : B.arr y' z'} (α : A.square e n a b) (β : PathSquare B c n m d) :
+    C.square e ((Paths.flatten R).map m) (μ.arr a c) (μ.arr b d) :=
+  μ.map_square ⟨m, ⟨n, α, β⟩, ⟨⟨rfl⟩⟩⟩
+
+/-- A binary cell along a chain `β` of squares of `A` and a chain of chains `γ` of squares of
+`B`, applying `μ.square` to each square of `β` and the corresponding chain of `γ`. -/
+def chain {x : P} {y : Paths Q} {z : Paths R} {a : A.arr x y} {c : B.arr y z} :
+    {x' : P} → {y' : Paths Q} → {z' : Paths R} → {n : Quiver.Path x x'} →
+      {m : Quiver.Path y y'} → {L : Quiver.Path (V := Paths (Paths R)) z z'} →
+      {b : A.arr x' y'} → {d : B.arr y' z'} →
+      PathSquare A a n m b → PathSquare (paths B) c m L d →
+        PathSquare C (μ.arr a c) n ((Paths.flatten R).mapPath L) (μ.arr b d)
+  | _, _, _, _, _, _, _, _, .nil, .nil => .nil
+  | _, _, _, _, _, _, _, _, .cons β t, .cons γ u => .cons (chain β γ) (μ.square t u)
+
+end BinaryCell
 
 end KleisliSpan
 

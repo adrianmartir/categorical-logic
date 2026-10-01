@@ -64,6 +64,38 @@ notation:25 y " →ᵥ[" A "] " x => QuiverSpan.arr A x y
 
 /-! ### Spans, squares and vertical composition -/
 
+/-- Transport a square of `A` along equalities of its source and of its sides, keeping its
+target. Laws between squares whose boundaries agree only propositionally are stated with it. -/
+def castSquare {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : R} {e : x ⟶ x'}
+    {e₁ e₂ : y ⟶ y'} {a₁ a₂ : A.arr x y} {b₁ b₂ : A.arr x' y'}
+    (he : e₁ = e₂) (ha : a₁ = a₂) (hb : b₁ = b₂) (s : A.square e e₁ a₁ b₁) :
+    A.square e e₂ a₂ b₂ :=
+  he ▸ ha ▸ hb ▸ s
+
+@[simp] theorem castSquare_rfl {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : R} {e : x ⟶ x'}
+    {e' : y ⟶ y'} {a : A.arr x y} {b : A.arr x' y'} (s : A.square e e' a b) :
+    A.castSquare rfl rfl rfl s = s :=
+  rfl
+
+theorem castSquare_heq {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : R} {e : x ⟶ x'}
+    {e₁ e₂ : y ⟶ y'} {a₁ a₂ : A.arr x y} {b₁ b₂ : A.arr x' y'}
+    (he : e₁ = e₂) (ha : a₁ = a₂) (hb : b₁ = b₂) (s : A.square e e₁ a₁ b₁) :
+    A.castSquare he ha hb s ≍ s := by
+  subst he ha hb
+  rfl
+
+/-- An equation with a transported square on one side is a heterogeneous equation. -/
+theorem eq_castSquare_iff_heq {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) {x x' : Q} {y y' : R} {e : x ⟶ x'}
+    {e₁ e₂ : y ⟶ y'} {a₁ a₂ : A.arr x y} {b₁ b₂ : A.arr x' y'}
+    (he : e₁ = e₂) (ha : a₁ = a₂) (hb : b₁ = b₂) (s : A.square e e₁ a₁ b₁)
+    (t : A.square e e₂ a₂ b₂) : t = A.castSquare he ha hb s ↔ t ≍ s := by
+  subst he ha hb
+  exact ⟨heq_of_eq, eq_of_heq⟩
+
 /-- A square in the double category of quivers, prefunctors and quiver spans, with source
 `A`, target `B`, and vertical sides `F` and `G`. It is a morphism of spans lying over the
 prefunctors between the feet. -/

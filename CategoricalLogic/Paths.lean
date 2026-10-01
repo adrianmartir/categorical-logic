@@ -15,17 +15,22 @@ prefunctors and quiver spans. As in `CategoricalLogic.QuiverSpan`, this is a gui
 and not an instance: we never state what a monad on a virtual double category is here. Instead
 each definition says in its docstring which piece of the monad structure it is.
 
-We only build what the Kleisli virtual double category of `Paths` uses. In particular the unit
-and the multiplication on spans, the comparison cells for horizontal composition, and the monad
-laws on spans and cells are not here; they are what associativity and unitality of Kleisli
-composition would need.
+We only build what the Kleisli virtual double category of `Paths` and the laws of virtual
+double categories use. In particular the comparison cells for horizontal composition and the
+monad laws on spans and cells are not here.
 
 ## Main definitions
 
 * `Paths.map`, `Paths.flatten`: the functor part and the multiplication in the vertical
   direction, from mathlib's `Cat.freeMap` and `pathComposition`; the unit is mathlib's
   `Paths.of`.
+* `Paths.flatten_map_of`, `Paths.flatten_map_mapPath_of`, `Paths.flatten_assoc`,
+  `Paths.flatten_naturality`: the monad laws and naturality of the multiplication in the vertical
+  direction.
 * `QuiverSpan.PathSquare`, `QuiverSpan.paths`: the functor part in the horizontal direction.
+* `QuiverSpan.PathSquare.single`, `QuiverSpan.PathSquare.flatten`: the unit and the
+  multiplication in the horizontal direction, elementwise.
+* `QuiverSpan.PathSquare.ofPath`: the chain along a path of given squares over its edges.
 * `QuiverSpan.Square.paths`, `QuiverSpan.Hom.paths`: the functor part on cells.
 -/
 
@@ -53,8 +58,9 @@ namespace Paths
 concatenation. This is mathlib's `pathComposition` for the path category `Paths Q`, so on
 edges it is `composePath`, which reduces definitionally on `nil` and `cons`.
 
-The span-level multiplication, which would make Kleisli composition associative, is not
-defined: Kleisli composition only uses the multiplication in this direction. -/
+Kleisli composition only uses the multiplication in this direction; the multiplication on
+spans, `QuiverSpan.PathSquare.flatten`, enters through the associativity of virtual double
+categories. -/
 def flatten (Q : Type u) [Quiver.{v} Q] : Paths (Paths Q) ⥤q Paths Q :=
   (pathComposition (Paths Q)).toPrefunctor
 
@@ -68,6 +74,41 @@ theorem flatten_map_mapPath_of {Q : Type u} [Quiver.{v} Q] {x y : Q} (p : Quiver
     change ((flatten Q).map ((Paths.of Q).mapPath p)).comp (Quiver.Hom.toPath e) = _
     rw [ih]
     rfl
+
+/-- `Paths.flatten_map_mapPath_of`, after a prefunctor. -/
+theorem flatten_map_mapPath_comp_of {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q]
+    [Quiver.{v₂} R] (F : Q ⥤q R) {x y : Q} (p : Quiver.Path x y) :
+    (flatten R).map ((F ⋙q Paths.of R).mapPath p) = F.mapPath p :=
+  (congrArg (flatten R).map (F.mapPath_comp_apply (Paths.of R) p)).trans
+    (flatten_map_mapPath_of _)
+
+/-- The other unit law of the monad in the vertical direction: flattening a one-element path of
+paths gives back its only element. -/
+theorem flatten_map_of {Q : Type u} [Quiver.{v} Q] {x y : Q} (p : Quiver.Path x y) :
+    (flatten Q).map ((Paths.of (Paths Q)).map p) = p :=
+  Quiver.Path.nil_comp p
+
+/-- Associativity of the monad in the vertical direction: flattening a path of paths of paths
+does not depend on which level is flattened first. -/
+theorem flatten_assoc {Q : Type u} [Quiver.{v} Q] {x y : Q}
+    (L : Quiver.Path (V := Paths (Paths Q)) x y) :
+    (flatten Q).map ((flatten (Paths Q)).map L) =
+      (flatten Q).map ((Paths.map (flatten Q)).map L) := by
+  induction L with
+  | nil => rfl
+  | cons L p ih =>
+    exact (composePath_comp _ _).trans
+      (congrArg (fun q : Quiver.Path _ _ => q.comp (composePath p)) ih)
+
+/-- Naturality of the multiplication of the monad in the vertical direction. -/
+theorem flatten_naturality {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+    (F : Q ⥤q R) {x y : Q} (m : Quiver.Path (V := Paths Q) x y) :
+    (Paths.map F).map ((flatten Q).map m) =
+      (flatten R).map ((Paths.map (Paths.map F)).map m) := by
+  induction m with
+  | nil => rfl
+  | cons m p ih =>
+    exact (F.mapPath_comp _ _).trans (congrArg (fun q : Quiver.Path _ _ => q.comp (F.mapPath p)) ih)
 
 end Paths
 
@@ -93,15 +134,51 @@ inductive PathSquare {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{
       (s : PathSquare A a p q b) (t : A.square e f b c) :
       PathSquare A a (p.cons e) (q.cons f) c
 
-/-- `Paths` on a quiver span: the functor part of the monad in the horizontal direction.
-
-The unit and multiplication on spans are not defined; see the module docstring. -/
+/-- `Paths` on a quiver span: the functor part of the monad in the horizontal direction. -/
 def paths {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
     (A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R) :
     QuiverSpan.{u₁, max u₁ v₁, u₂, max u₂ v₂, w, max u₁ u₂ v₁ v₂ w z}
       (Paths Q) (Paths R) where
   arr x y := A.arr x y
   square p q a b := PathSquare A a p q b
+
+namespace PathSquare
+
+variable {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+  {A : QuiverSpan.{u₁, v₁, u₂, v₂, w, z} Q R}
+
+/-- The one-element chain on a square: the unit of the monad on spans. -/
+abbrev single {x x' : Q} {y y' : R} {e : x ⟶ x'} {f : y ⟶ y'} {a : A.arr x y}
+    {b : A.arr x' y'} (t : A.square e f a b) : PathSquare A a e.toPath f.toPath b :=
+  .cons .nil t
+
+/-- Concatenation of chains. -/
+def comp {x x' : Q} {y y' : R} {a : A.arr x y} {p : Quiver.Path x x'} {q : Quiver.Path y y'}
+    {b : A.arr x' y'} (s : PathSquare A a p q b) :
+    {x'' : Q} → {y'' : R} → {p' : Quiver.Path x' x''} → {q' : Quiver.Path y' y''} →
+      {c : A.arr x'' y''} → PathSquare A b p' q' c → PathSquare A a (p.comp p') (q.comp q') c
+  | _, _, _, _, _, .nil => s
+  | _, _, _, _, _, .cons t u => .cons (s.comp t) u
+
+/-- Flattening a chain of chains into a chain, by concatenation: the multiplication of the
+monad on spans. -/
+def flatten {x : Q} {y : R} {a : A.arr x y} :
+    {x' : Q} → {y' : R} → {m : Quiver.Path (V := Paths Q) x x'} →
+      {L : Quiver.Path (V := Paths R) y y'} → {b : A.arr x' y'} →
+      PathSquare (paths A) a m L b →
+        PathSquare A a ((Paths.flatten Q).map m) ((Paths.flatten R).map L) b
+  | _, _, _, _, _, .nil => .nil
+  | _, _, _, _, _, .cons s t => (flatten s).comp t
+
+/-- The chain along a path `p` of given squares `s e` over the edges `e` of `p`. -/
+def ofPath {P : Type*} [Quiver P] (F : P ⥤q Q) (G : P ⥤q R)
+    (a : (x : P) → A.arr (F.obj x) (G.obj x))
+    (s : {x x' : P} → (e : x ⟶ x') → A.square (F.map e) (G.map e) (a x) (a x')) {x : P} :
+    {x' : P} → (p : Quiver.Path x x') → PathSquare A (a x) (F.mapPath p) (G.mapPath p) (a x')
+  | _, .nil => .nil
+  | _, .cons p e => .cons (ofPath F G a s p) (s e)
+
+end PathSquare
 
 /-! ### Cells -/
 
