@@ -50,6 +50,16 @@ def map {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R] (F :
     Paths Q ⥤q Paths R :=
   (Cat.freeMap F).toPrefunctor
 
+/-- Functoriality of `Paths` in the vertical direction, on identities. -/
+theorem map_id (Q : Type u) [Quiver.{v} Q] : Paths.map (𝟭q Q) = 𝟭q (Paths Q) :=
+  congrArg Functor.toPrefunctor (Cat.freeMap_id Q)
+
+/-- Functoriality of `Paths` in the vertical direction, on composites. -/
+theorem map_comp {P : Type u} {Q : Type u₁} {R : Type u₂} [Quiver.{v} P] [Quiver.{v₁} Q]
+    [Quiver.{v₂} R] (F : P ⥤q Q) (G : Q ⥤q R) :
+    Paths.map (F ⋙q G) = Paths.map F ⋙q Paths.map G :=
+  congrArg Functor.toPrefunctor (Cat.freeMap_comp F G)
+
 end Paths
 
 namespace Paths
@@ -109,6 +119,27 @@ theorem flatten_naturality {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Qu
   | nil => rfl
   | cons m p ih =>
     exact (F.mapPath_comp _ _).trans (congrArg (fun q : Quiver.Path _ _ => q.comp (F.mapPath p)) ih)
+
+theorem mapPath_map_id {Q : Type u} [Quiver.{v} Q] {x y : Paths Q}
+    (m : Quiver.Path x y) : (Paths.map (𝟭q Q)).mapPath m = m := by
+  induction m with
+  | nil => rfl
+  | cons m p ih =>
+    change ((Paths.map (𝟭q Q)).mapPath m).cons ((𝟭q Q).mapPath p) = m.cons p
+    rw [ih]
+    exact congrArg m.cons (Prefunctor.mapPath_id p)
+
+theorem mapPath_map_comp {P : Type u} {Q : Type u₁} {R : Type u₂} [Quiver.{v} P]
+    [Quiver.{v₁} Q] [Quiver.{v₂} R] (F : P ⥤q Q) (G : Q ⥤q R) {x y : Paths P}
+    (m : Quiver.Path x y) :
+    (Paths.map (F ⋙q G)).mapPath m = (Paths.map G).mapPath ((Paths.map F).mapPath m) := by
+  induction m with
+  | nil => rfl
+  | cons m p ih =>
+    change ((Paths.map (F ⋙q G)).mapPath m).cons ((F ⋙q G).mapPath p) =
+      ((Paths.map G).mapPath ((Paths.map F).mapPath m)).cons (G.mapPath (F.mapPath p))
+    rw [ih]
+    exact congrArg _ (Prefunctor.mapPath_comp_apply F G p)
 
 end Paths
 
@@ -177,6 +208,18 @@ def ofPath {P : Type*} [Quiver P] (F : P ⥤q Q) (G : P ⥤q R)
     {x' : P} → (p : Quiver.Path x x') → PathSquare A (a x) (F.mapPath p) (G.mapPath p) (a x')
   | _, .nil => .nil
   | _, .cons p e => .cons (ofPath F G a s p) (s e)
+
+/-- Congruence for `cons` along equal boundary paths and edges. -/
+theorem cons_heq_cons {x x' x'' : Q} {y y' y'' : R} {a : A.arr x y} {b : A.arr x' y'}
+    {c : A.arr x'' y''} {e e' : x' ⟶ x''} {f f' : y' ⟶ y''} {p p' : Quiver.Path x x'}
+    {q q' : Quiver.Path y y'} (hp : p = p') (hq : q = q') (he : e = e') (hf : f = f')
+    {s : PathSquare A a p q b} {s' : PathSquare A a p' q' b} {t : A.square e f b c}
+    {t' : A.square e' f' b c} (hs : s ≍ s') (ht : t ≍ t') :
+    s.cons t ≍ s'.cons t' := by
+  subst hp hq he hf
+  obtain rfl := eq_of_heq hs
+  obtain rfl := eq_of_heq ht
+  rfl
 
 end PathSquare
 

@@ -90,7 +90,7 @@ the piece of monad structure it is, so that the shape stays legible from the cod
 
 Here `Paths` is bookkeeping for n-ary sources. Everything mentioned below is needed unless it
 is marked "(not needed)", and the standard for that is whether the Kleisli virtual double
-category for `Paths` uses it. Reuse mathlib wherever it applies.
+category for `Paths`, or the laws of virtual double categories, use it. Reuse mathlib wherever it applies.
 
 The free category monad on quivers is already in mathlib, so we only need
 
@@ -103,12 +103,15 @@ layer is the ordinary free category monad on quivers.
   `pathComposition` for the path category, so on edges it is `composePath`, which reduces
   definitionally on `nil` and `cons`.
 * Functoriality, `Paths 𝟭q = 𝟭q` and `Paths (F ⋙q G) = Paths F ⋙q Paths G` (mathlib
-  `mapPath_id` and `mapPath_comp_apply`) (not needed). Worth knowing only because neither is
-  `rfl`, which is why the two forms of `Paths` on cells below cannot be collapsed into one.
+  `mapPath_id` and `mapPath_comp_apply`; `Paths.map_id`, `Paths.map_comp`,
+  `Paths.mapPath_map_id`, `Paths.mapPath_map_comp`). Neither is `rfl`, which is why the two
+  forms of `Paths` on cells below cannot be collapsed into one. The identity and composite
+  functors of virtual double categories use them.
 * Naturality of the unit and of the multiplication in prefunctors (mathlib `mapPath_toPath`)
   (not needed)
-* The monad laws (not needed). One of them is already proved as
-  `Paths.flatten_map_mapPath_of`; keep it, it is one line.
+* The monad laws (`Paths.flatten_map_of`, `Paths.flatten_map_mapPath_of`,
+  `Paths.flatten_assoc`) and naturality of the multiplication (`Paths.flatten_naturality`).
+  The laws of virtual double categories and of their functors transport cells along them.
 
 **The horizontal direction.** Horizontal arrows are quiver spans.
 * `Paths` on a span (`QuiverSpan.PathSquare` and `QuiverSpan.paths`). A cell of `Paths A`
@@ -117,12 +120,12 @@ layer is the ordinary free category monad on quivers.
   two paths to have the same length. As for `Quiver.Path`, the start of a chain is a
   parameter rather than an index, which is what makes recursion on chains structural, so
   that it reduces definitionally.
-* Concatenation of chains (not needed). It is only there to build the multiplication on
-  spans, so it goes out with it.
-* The unit and the multiplication on spans (not needed). Kleisli composition uses
-  the multiplication only in the vertical direction. These are what would let us say that
-  the construction really is the horizontal Kleisli one, so say so in a comment where the
-  vertical multiplication is defined.
+* Concatenation of chains (`PathSquare.comp`), and the unit and the multiplication on spans,
+  elementwise (`PathSquare.single` and `PathSquare.flatten`). Kleisli composition uses the
+  multiplication only in the vertical direction; the multiplication on spans enters through
+  the associativity law of virtual double categories.
+* The chain along a path of given squares over its edges (`PathSquare.ofPath`), used by
+  naturality of transformations.
 * Comparison cells for the horizontal identity and for binary horizontal composition, and
   their inverses (not needed). They are what associativity and unitality of Kleisli
   composition will need.
@@ -190,13 +193,15 @@ section, so the module is that definition unfolded and then built upon.
   one, composition of arrows and substitution of cells from the binary one (`idArr`,
   `idCell`, `compArr`, `subst`). `compArr` is in diagrammatic order. The cell halves are
   what the term calculus will actually be written against.
-* Axioms — associativity and unit, for arrows and for cells — as fields, stated elementwise
-  through the accessors above rather than as equations between morphisms of spans. The
-  latter needs unitors and an associator for Kleisli composition, which is the only thing
-  that would drag the span-level unit, multiplication and comparison cells of `Paths.lean`
-  back in. Not stated yet. For cells the boundaries agree only propositionally, and
-  associativity needs a chain to be split along a concatenated path, which is the inverse of
-  the concatenation of chains marked (not needed) in `Paths.lean`.
+* Axioms — associativity and unit, for arrows and for cells — as fields of
+  `VirtualDoubleCategory`, stated elementwise through the accessors above rather than as
+  equations between morphisms of spans. The latter would need unitors and an associator for
+  Kleisli composition. For cells the boundaries agree only propositionally, so one side is
+  transported with `QuiverSpan.castSquare`. Associativity is stated for a chain `γ.flatten`
+  concatenated from a chain of chains `γ`, which avoids splitting chains.
+* The accessors are the elementwise accessors of nullary and binary Kleisli cells
+  (`KleisliSpan.NullaryCell.arr`, `.square`, `.chain` and `KleisliSpan.BinaryCell.arr`,
+  `.square`, `.chain`), so they are derived from the Kleisli API.
 
 **Functors.** A functor from `(Q, A)` to `(R, B)` is a prefunctor `f : Q ⥤q R` together with
 a Kleisli cell from `A` to `B` over `f` and `f`, so a square from `A` to `B` over `f` and
@@ -219,14 +224,15 @@ a Kleisli cell from `A` to `B` over `f` and `f`, so a square from `A` to `B` ove
   are cells with source `(f p₁, …, f pₙ)` and target `g e`. This is the paper's
   `θ_q (Fα) = (Gα)(θ_{p₁} ⊡ ⋯ ⊡ θ_{pₙ})`.
 * Identity transformations, vertical composition, and whiskering by a functor on either
-  side. The four whiskerings are what the monad laws below are stated with.
+  side (not done yet). The monad laws below are stated componentwise without them.
 
 **Monads.** A monad on a virtual double category `X` consists of
 * an endofunctor `T` of `X`;
 * a transformation `η` from the identity functor to `T`;
 * a transformation `μ` from `T ∘ T` to `T`;
-* the unit laws `μ ∘ ηT = id` and `μ ∘ Tη = id`, and associativity `μ ∘ Tμ = μ ∘ μT`, as
-  equalities of transformations, hence componentwise on objects and on proarrows.
+* the unit laws `μ ∘ ηT = id` and `μ ∘ Tη = id`, and associativity `μ ∘ Tμ = μ ∘ μT`,
+  componentwise on objects and on proarrows. `η` and `μ` are transformations between the data
+  of functors, so that `T ∘ T` and the identity functor need no proofs to appear in them.
 
 **Example.** Quivers, prefunctors and quiver spans form a virtual double category, whose data
 is `SpanQuiv.virtualDoubleCategoryStruct`. Its arrows from `r` to `q` are the prefunctors

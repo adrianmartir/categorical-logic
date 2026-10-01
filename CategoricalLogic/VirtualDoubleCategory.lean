@@ -105,6 +105,18 @@ abbrev substChain {x x' : Q} {y y' : Paths Q} {z z' : Paths (Paths Q)}
     PathSquare V.hom (V.compArr c a) n ((Paths.flatten Q).mapPath L) (V.compArr d b) :=
   V.mul.chain β γ
 
+/-- Congruence for substitution along equal boundary paths. -/
+theorem subst_heq_subst {x x' : Q} {y y' : Paths Q} {z z' : Paths (Paths Q)} {e : x ⟶ x'}
+    {n n' : y ⟶ y'} {m m' : z ⟶ z'} {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'}
+    {c : z →ᵥ[V.hom] y} {d : z' →ᵥ[V.hom] y'} (hn : n = n') (hm : m = m')
+    {α : V.hom.square e n a b} {α' : V.hom.square e n' a b} {β : PathSquare V.hom c n m d}
+    {β' : PathSquare V.hom c n' m' d} (hα : α ≍ α') (hβ : β ≍ β') :
+    V.subst α β ≍ V.subst α' β' := by
+  subst hn hm
+  obtain rfl := eq_of_heq hα
+  obtain rfl := eq_of_heq hβ
+  rfl
+
 end VirtualDoubleCategoryStruct
 
 /-- A virtual double category: a monoid in the Kleisli virtual double category of `Paths`.
@@ -206,6 +218,44 @@ def comp {U : VirtualDoubleCategoryStruct.{u₂, v₂, w, z} S} (G : Functor W U
         U.hom.castSquare (Prefunctor.mapPath_comp_apply F.obj G.obj p).symm rfl rfl
           (G.mapSquare (F.mapSquare α)) }
 
+theorem id_mapSquare_heq {x x' y y' : Q} {e : x ⟶ x'} {p : Quiver.Path y y'}
+    {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'} (α : V.hom.square e p a b) :
+    (Functor.id V).mapSquare α ≍ α :=
+  V.hom.castSquare_heq (Prefunctor.mapPath_id p).symm rfl rfl α
+
+theorem comp_mapSquare_heq {U : VirtualDoubleCategoryStruct.{u₂, v₂, w, z} S} (G : Functor W U)
+    {x x' y y' : Q} {e : x ⟶ x'} {p : Quiver.Path y y'} {a : y →ᵥ[V.hom] x}
+    {b : y' →ᵥ[V.hom] x'} (α : V.hom.square e p a b) :
+    (F.comp G).mapSquare α ≍ G.mapSquare (F.mapSquare α) :=
+  U.hom.castSquare_heq (Prefunctor.mapPath_comp_apply F.obj G.obj p).symm rfl rfl _
+
+theorem mapSquare_castSquare_heq {x x' y y' : Q} {e : x ⟶ x'} {p₁ p₂ : Quiver.Path y y'}
+    {a₁ a₂ : y →ᵥ[V.hom] x} {b₁ b₂ : y' →ᵥ[V.hom] x'} (hp : p₁ = p₂) (ha : a₁ = a₂)
+    (hb : b₁ = b₂) (α : V.hom.square e p₁ a₁ b₁) :
+    F.mapSquare (V.hom.castSquare hp ha hb α) ≍ F.mapSquare α := by
+  subst hp ha hb
+  rfl
+
+theorem mapChain_id_heq {x x' : Q} {y y' : Paths Q} {n : Quiver.Path x x'}
+    {m : Quiver.Path y y'} {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'}
+    (β : PathSquare V.hom a n m b) : (Functor.id V).mapChain β ≍ β := by
+  induction β with
+  | nil => rfl
+  | cons β t ih =>
+    exact PathSquare.cons_heq_cons (Prefunctor.mapPath_id _) (Paths.mapPath_map_id _) rfl
+      (Prefunctor.mapPath_id _) ih (id_mapSquare_heq t)
+
+theorem mapChain_comp_heq {U : VirtualDoubleCategoryStruct.{u₂, v₂, w, z} S} (G : Functor W U)
+    {x x' : Q} {y y' : Paths Q} {n : Quiver.Path x x'}
+    {m : Quiver.Path y y'} {a : y →ᵥ[V.hom] x} {b : y' →ᵥ[V.hom] x'}
+    (β : PathSquare V.hom a n m b) : (F.comp G).mapChain β ≍ G.mapChain (F.mapChain β) := by
+  induction β with
+  | nil => rfl
+  | cons β t ih =>
+    exact PathSquare.cons_heq_cons (Prefunctor.mapPath_comp_apply _ _ _)
+      (Paths.mapPath_map_comp _ _ _) rfl (Prefunctor.mapPath_comp_apply _ _ _) ih
+      (F.comp_mapSquare_heq G t)
+
 end Functor
 
 end VirtualDoubleCategoryStruct
@@ -283,6 +333,50 @@ structure Monad (V : VirtualDoubleCategory.{u, v, w, z} Q) where
     V.subst (μ.cell e) (.single (T.mapSquare (μ.cell e))) =
       V.hom.castSquare rfl (assoc x).symm (assoc x').symm
         (V.subst (μ.cell e) (.single (μ.cell (T.obj.map e))))
+
+namespace Functor
+
+variable {S : Type u₂} [Quiver.{v₂} S]
+
+/-- The identity functor. -/
+protected def id (V : VirtualDoubleCategory.{u, v, w, z} Q) : Functor V V where
+  toFunctor := .id V.toVirtualDoubleCategoryStruct
+  map_idArr _ := rfl
+  map_compArr _ _ := rfl
+  map_idCell _ := rfl
+  map_subst {_ _ _ _ _ _ _ n m _ _ _ _} α β :=
+    (V.hom.eq_castSquare_iff_heq _ _ _ _ _).2 <|
+      (VirtualDoubleCategoryStruct.Functor.id_mapSquare_heq _).trans <|
+      V.subst_heq_subst (Prefunctor.mapPath_id n).symm (Paths.mapPath_map_id (Q := Q) m).symm
+        (VirtualDoubleCategoryStruct.Functor.id_mapSquare_heq α).symm
+        (VirtualDoubleCategoryStruct.Functor.mapChain_id_heq β).symm
+
+/-- Composition of functors, in diagrammatic order. -/
+def comp {V : VirtualDoubleCategory.{u, v, w, z} Q}
+    {W : VirtualDoubleCategory.{u₁, v₁, w', z'} R}
+    {U : VirtualDoubleCategory.{u₂, v₂, w, z} S} (F : Functor V W) (G : Functor W U) :
+    Functor V U where
+  toFunctor := F.toFunctor.comp G.toFunctor
+  map_idArr x := (congrArg G.mapArr (F.map_idArr x)).trans (G.map_idArr _)
+  map_compArr f g := (congrArg G.mapArr (F.map_compArr f g)).trans (G.map_compArr _ _)
+  map_idCell e :=
+    (U.hom.eq_castSquare_iff_heq _ _ _ _ _).2 <|
+      (F.toFunctor.comp_mapSquare_heq G.toFunctor _).trans <|
+      (heq_of_eq (congrArg (fun s => G.mapSquare s) (F.map_idCell e))).trans <|
+      (G.mapSquare_castSquare_heq _ _ _ _).trans <|
+      (heq_of_eq (G.map_idCell _)).trans (U.hom.castSquare_heq _ _ _ _)
+  map_subst {_ _ _ _ _ _ _ n m _ _ _ _} α β :=
+    (U.hom.eq_castSquare_iff_heq _ _ _ _ _).2 <|
+      (F.toFunctor.comp_mapSquare_heq G.toFunctor _).trans <|
+      (heq_of_eq (congrArg (fun s => G.mapSquare s) (F.map_subst α β))).trans <|
+      (G.mapSquare_castSquare_heq _ _ _ _).trans <|
+      (heq_of_eq (G.map_subst _ _)).trans <| (U.hom.castSquare_heq _ _ _ _).trans <|
+      U.subst_heq_subst (Prefunctor.mapPath_comp_apply F.obj G.obj n).symm
+        (Paths.mapPath_map_comp F.obj G.obj m).symm
+        (F.toFunctor.comp_mapSquare_heq G.toFunctor α).symm
+        (F.toFunctor.mapChain_comp_heq G.toFunctor β).symm
+
+end Functor
 
 end VirtualDoubleCategory
 
