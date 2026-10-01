@@ -26,8 +26,8 @@ The dictionary, following the orientation of `CategoricalLogic.QuiverSpan`:
   `compArr`, `idCell` and `subst`, which are those of nullary and binary Kleisli cells.
 * `VirtualDoubleCategory.Functor`: functors of virtual double categories, which are morphisms
   of monoids, with their identity and composition.
-* `VirtualDoubleCategory.Transformation`: transformations, which are Kleisli cells out of the
-  Kleisli identity, natural with respect to the multiplications.
+* `VirtualDoubleCategory.Transformation`: transformations, which are squares of Kleisli spans out of
+  the Kleisli identity, natural with respect to the multiplications.
 * `VirtualDoubleCategory.Monad`: monads on a virtual double category.
 * `SpanQuiv.hom`, `SpanQuiv.id`, `SpanQuiv.comp`: the data of the virtual double category of
   quivers, prefunctors and quiver spans.
@@ -49,7 +49,8 @@ namespace CategoryTheory
 
 universe u v u₁ v₁ u₂ v₂ w z w₁ z₁ w₂ z₂
 
-open QuiverSpan KleisliSpan
+open QuiverSpan hiding Square
+open KleisliSpan
 
 /-- A virtual double category whose objects and proarrows are the vertices and edges of `Q`: a
 monoid in the Kleisli virtual double category of `Paths`. See the module docstring for the
@@ -117,51 +118,51 @@ theorem idCell_subst {x x' y y' : Q} {e : x ⟶ x'} {p : Quiver.Path y y'} {a : 
       (b := ⟨_, ⟨_, ⟨⟨rfl⟩⟩, b⟩, ⟨⟨rfl⟩⟩⟩) ⟨_, ⟨_, ⟨⟨rfl⟩⟩, .single α⟩, ⟨⟨rfl⟩⟩⟩)
       V.one_mul).trans (V.hom.castSquare_heq (Paths.flatten_map_of p).symm rfl rfl α)
 
-/-- The identity arrows and identity cells along a prefunctor `f`, as a Kleisli cell out of the
-Kleisli identity: the components of an identity transformation. -/
+/-- The identity arrows and identity cells along a prefunctor `f`, as a square of Kleisli spans
+out of the Kleisli identity: the components of an identity transformation. -/
 def unitCell {P : Type u₁} [Quiver.{v₁} P] (f : P ⥤q Q) :
-    Cell (KleisliSpan.id P) V.hom f f :=
-  Square.vComp (idMap f) V.id
+    Square (KleisliSpan.id P) V.hom f f :=
+  QuiverSpan.Square.vComp (idMap f) V.id
 
-/-- Composition of Kleisli cells out of the Kleisli identity, in diagrammatic order: the
-components of a vertical composite of transformations. -/
+/-- Composition of squares of Kleisli spans out of the Kleisli identity, in diagrammatic order:
+the components of a vertical composite of transformations. -/
 def compCell {P : Type u₁} [Quiver.{v₁} P] {f g h : P ⥤q Q}
-    (θ : Cell (KleisliSpan.id P) V.hom g f) (θ' : Cell (KleisliSpan.id P) V.hom h g) :
-    Cell (KleisliSpan.id P) V.hom h f :=
-  (KleisliSpan.leftUnitorInv (KleisliSpan.id P)).vComp (Square.vComp (θ'.hComp θ) V.mul)
+    (θ : Square (KleisliSpan.id P) V.hom g f) (θ' : Square (KleisliSpan.id P) V.hom h g) :
+    Square (KleisliSpan.id P) V.hom h f :=
+  (leftUnitorInv (KleisliSpan.id P)).vComp (QuiverSpan.Square.vComp (θ'.hComp θ) V.mul)
 
 /-! ### Functors -/
 
 variable {R : Type u₁} [Quiver.{v₁} R] {S : Type u₂} [Quiver.{v₂} S]
 
 /-- A functor of virtual double categories: a morphism of monoids. It is a prefunctor on
-objects and proarrows, and a Kleisli cell over it acting on arrows and cells, which preserves
-the unit and the multiplication. -/
+objects and proarrows, and a square of Kleisli spans over it acting on arrows and cells, which
+preserves the unit and the multiplication. -/
 structure Functor (V : VirtualDoubleCategory.{u, v, w, z} Q)
     (W : VirtualDoubleCategory.{u₁, v₁, w₁, z₁} R) where
   /-- The action on objects and proarrows. -/
   obj : Q ⥤q R
   /-- The action on arrows and cells. -/
-  map : Cell V.hom W.hom obj obj
+  map : Square V.hom W.hom obj obj
   map_id : V.id.vComp map = W.unitCell obj
-  map_mul : V.mul.vComp map = Square.vComp (map.hComp map) W.mul
+  map_mul : V.mul.vComp map = QuiverSpan.Square.vComp (map.hComp map) W.mul
 
 namespace Functor
 
 /-- The identity functor. -/
 protected def id (V : VirtualDoubleCategory.{u, v, w, z} Q) : Functor V V where
   obj := 𝟭q Q
-  map := Cell.id V.hom
+  map := Square.id V.hom
   map_id := by
-    refine Square.ext (fun _ => rfl) (fun {_ _ _ _ _ n _ _} u => ?_)
-    exact (Cell.id_map_square_heq V.hom (V.id.map_square u)).trans <|
+    refine QuiverSpan.Square.ext (fun _ => rfl) (fun {_ _ _ _ _ n _ _} u => ?_)
+    exact (Square.id_map_square_heq V.hom (V.id.map_square u)).trans <|
       V.id.map_square_heq (Prefunctor.mapPath_id n).symm rfl rfl
         (id_restrict_square_heq rfl (Prefunctor.mapPath_id n).symm _ _)
   map_mul := by
-    refine Square.ext (fun _ => rfl) (fun {_ _ _ _ _ e' _ _} u => ?_)
-    exact (Cell.id_map_square_heq V.hom (V.mul.map_square u)).trans <|
+    refine QuiverSpan.Square.ext (fun _ => rfl) (fun {_ _ _ _ _ e' _ _} u => ?_)
+    exact (Square.id_map_square_heq V.hom (V.mul.map_square u)).trans <|
       V.mul.map_square_heq (Prefunctor.mapPath_id e').symm rfl rfl
-        (Cell.id_hComp_id_map_square_heq V.hom V.hom u).symm
+        (Square.id_hComp_id_map_square_heq V.hom V.hom u).symm
 
 variable {V : VirtualDoubleCategory.{u, v, w, z} Q}
   {W : VirtualDoubleCategory.{u₁, v₁, w₁, z₁} R}
@@ -172,50 +173,52 @@ def comp {U : VirtualDoubleCategory.{u₂, v₂, w₂, z₂} S} (F : Functor V W
   obj := F.obj ⋙q G.obj
   map := F.map.vComp G.map
   map_id := by
-    refine Square.ext (fun a => ?_) (fun {_ _ _ _ _ n a b} u => ?_)
-    · have h₁ := congrArg (fun s => Square.map_arr s a) F.map_id
-      have h₂ := congrArg (fun s => Square.map_arr s ((idMap F.obj).map_arr a)) G.map_id
-      exact (congrArg G.map.map_arr h₁).trans h₂
-    · have ha := congrArg (fun s => Square.map_arr s a) F.map_id
-      have hb := congrArg (fun s => Square.map_arr s b) F.map_id
-      have h₁ := congr_arg_heq (fun s => Square.map_square s u) F.map_id
-      have h₂ := congr_arg_heq (fun s => Square.map_square s ((idMap F.obj).map_square u))
+    refine QuiverSpan.Square.ext (fun a => ?_) (fun {_ _ _ _ _ n a b} u => ?_)
+    · have h₁ := congrArg (fun s => QuiverSpan.Square.map_arr s a) F.map_id
+      have h₂ := congrArg (fun s => QuiverSpan.Square.map_arr s ((idMap F.obj).map_arr a))
         G.map_id
-      refine (Cell.vComp_map_square_heq F.map G.map (V.id.map_square u)).trans <|
+      exact (congrArg G.map.map_arr h₁).trans h₂
+    · have ha := congrArg (fun s => QuiverSpan.Square.map_arr s a) F.map_id
+      have hb := congrArg (fun s => QuiverSpan.Square.map_arr s b) F.map_id
+      have h₁ := congr_arg_heq (fun s => QuiverSpan.Square.map_square s u) F.map_id
+      have h₂ := congr_arg_heq
+        (fun s => QuiverSpan.Square.map_square s ((idMap F.obj).map_square u)) G.map_id
+      refine (Square.vComp_map_square_heq F.map G.map (V.id.map_square u)).trans <|
         (G.map.map_square_heq rfl ha hb h₁).trans <| h₂.trans <|
         U.id.map_square_heq (Prefunctor.mapPath_comp_apply F.obj G.obj n).symm rfl rfl ?_
       exact id_restrict_square_heq rfl (Prefunctor.mapPath_comp_apply F.obj G.obj n).symm _ _
   map_mul := by
-    refine Square.ext (fun a => ?_) (fun {_ _ _ _ _ e' a b} u => ?_)
-    · have h₁ := congrArg (fun s => Square.map_arr s a) F.map_mul
-      have h₂ := congrArg (fun s => Square.map_arr s ((F.map.hComp F.map).map_arr a)) G.map_mul
+    refine QuiverSpan.Square.ext (fun a => ?_) (fun {_ _ _ _ _ e' a b} u => ?_)
+    · have h₁ := congrArg (fun s => QuiverSpan.Square.map_arr s a) F.map_mul
+      have h₂ := congrArg
+        (fun s => QuiverSpan.Square.map_arr s ((F.map.hComp F.map).map_arr a)) G.map_mul
       exact (congrArg G.map.map_arr h₁).trans h₂
-    · have ha := congrArg (fun s => Square.map_arr s a) F.map_mul
-      have hb := congrArg (fun s => Square.map_arr s b) F.map_mul
-      have h₁ := congr_arg_heq (fun s => Square.map_square s u) F.map_mul
+    · have ha := congrArg (fun s => QuiverSpan.Square.map_arr s a) F.map_mul
+      have hb := congrArg (fun s => QuiverSpan.Square.map_arr s b) F.map_mul
+      have h₁ := congr_arg_heq (fun s => QuiverSpan.Square.map_square s u) F.map_mul
       have h₂ := congr_arg_heq
-        (fun s => Square.map_square s ((F.map.hComp F.map).map_square u)) G.map_mul
-      exact (Cell.vComp_map_square_heq F.map G.map (V.mul.map_square u)).trans <|
+        (fun s => QuiverSpan.Square.map_square s ((F.map.hComp F.map).map_square u)) G.map_mul
+      exact (Square.vComp_map_square_heq F.map G.map (V.mul.map_square u)).trans <|
         (G.map.map_square_heq rfl ha hb h₁).trans <| h₂.trans <|
         U.mul.map_square_heq (Prefunctor.mapPath_comp_apply F.obj G.obj e').symm rfl rfl
-          (Cell.hComp_vComp_map_square_heq F.map F.map G.map G.map u).symm
+          (Square.hComp_vComp_map_square_heq F.map F.map G.map G.map u).symm
 
 end Functor
 
 /-! ### Transformations and monads -/
 
-/-- A transformation between functors `F` and `G` of virtual double categories: a Kleisli cell
-out of the Kleisli identity, whose components are an arrow from `F x` to `G x` for every object
-`x` and a cell from `F e` to `G e` for every proarrow `e`. Naturality says that substituting
-`F α` into the component at the target of a cell `α` is substituting the components along
-the source of `α` into `G α`. -/
+/-- A transformation between functors `F` and `G` of virtual double categories: a square of
+Kleisli spans out of the Kleisli identity, whose components are an arrow from `F x` to `G x`
+for every object `x` and a cell from `F e` to `G e` for every proarrow `e`. Naturality says
+that substituting `F α` into the component at the target of a cell `α` is substituting the
+components along the source of `α` into `G α`. -/
 structure Transformation {V : VirtualDoubleCategory.{u, v, w, z} Q}
     {W : VirtualDoubleCategory.{u₁, v₁, w₁, z₁} R} (F G : Functor V W) where
   /-- The components. -/
-  app : Cell (KleisliSpan.id Q) W.hom G.obj F.obj
+  app : Square (KleisliSpan.id Q) W.hom G.obj F.obj
   naturality :
-    (KleisliSpan.leftUnitorInv V.hom).vComp (Square.vComp (app.hComp F.map) W.mul) =
-      (KleisliSpan.rightUnitorInv V.hom).vComp (Square.vComp (G.map.hComp app) W.mul)
+    (leftUnitorInv V.hom).vComp (QuiverSpan.Square.vComp (app.hComp F.map) W.mul) =
+      (KleisliSpan.rightUnitorInv V.hom).vComp (QuiverSpan.Square.vComp (G.map.hComp app) W.mul)
 
 /-- A monad on a virtual double category: an endofunctor `T` with a unit `η : 1 ⟶ T` and a
 multiplication `μ : T T ⟶ T`, satisfying the unit laws `μ ∘ ηT = 1` and `μ ∘ Tη = 1` and
@@ -256,10 +259,10 @@ def hCompPath {q : SpanQuiv.{u, v}} {r : Paths SpanQuiv.{u, v}} {F : hom.arr q r
     {n : Quiver.Path q q'} → {m : @Quiver.Path (Paths SpanQuiv.{u, v}) _ r r'} →
     {G : hom.arr q' r'} →
     PathSquare hom F n m G →
-      Square (composePath ((Paths.flatten SpanQuiv.{u, v}).map m)) (composePath n) F G
-  | _, _, _, _, _, .nil => Square.hId F
+      QuiverSpan.Square (composePath ((Paths.flatten SpanQuiv.{u, v}).map m)) (composePath n) F G
+  | _, _, _, _, _, .nil => QuiverSpan.Square.hId F
   | _, _, _, _, _, .cons c t =>
-      Square.vComp (composePathCompInv _ _) (Square.hComp (hCompPath c) t)
+      QuiverSpan.Square.vComp (composePathCompInv _ _) (QuiverSpan.Square.hComp (hCompPath c) t)
 
 /-- Composition in the virtual double category of spans: prefunctors compose on arrows, and a
 chain of multisquares is substituted into a multisquare by n-ary horizontal composition
@@ -269,7 +272,7 @@ def comp : KleisliSpan.BinaryCell hom.{u, v} hom.{u, v} hom.{u, v} where
   map_square {_ _ _ _ _ _ a b} := fun s =>
     match a, b, s with
     | ⟨_, ⟨_, _, _⟩, ⟨⟨rfl⟩⟩⟩, ⟨_, ⟨_, _, _⟩, ⟨⟨rfl⟩⟩⟩, ⟨_, ⟨_, α, β⟩, ⟨⟨h⟩⟩⟩ =>
-      h ▸ Square.vComp (hCompPath β) α
+      h ▸ QuiverSpan.Square.vComp (hCompPath β) α
 
 /-- Identities in the virtual double category of spans: identity prefunctors on arrows, and the
 n-ary composite of a one-element path as the identity cell on a span. -/

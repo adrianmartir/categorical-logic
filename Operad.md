@@ -163,7 +163,7 @@ The `PathsKleisli.lean` module should contain the Kleisli virtual double categor
   names those three factors, since that is where the multiplication of the monad enters.
 * Functoriality of Kleisli composition in both arguments (`KleisliSpan.hComp`). Used by
   functors of virtual double categories.
-* Kleisli cells (`KleisliSpan.Cell`). A cell from `A` to `B` over prefunctors `f` and `g` is
+* Kleisli cells (`KleisliSpan.Square`). A cell from `A` to `B` over prefunctors `f` and `g` is
   a square from `A` to `B` over `f` and `Paths g`. This is the reason `Paths.lean` has to keep `Paths` on
   prefunctors and `Paths` on squares over arbitrary prefunctors.
 * Kleisli cells with nullary and binary source, as abbreviations for cells out of the
@@ -210,12 +210,12 @@ to `B` over `f` and `Paths f`), preserving the unit and the multiplication:
 `id ≫ F = idMap f ≫ id` and `mul ≫ F = (F ⊙ F) ≫ mul`. It is one structure,
 `VirtualDoubleCategory.Functor`. This needs, in `PathsKleisli.lean`, the Kleisli identity on a
 prefunctor (`KleisliSpan.idMap`) and horizontal composition of Kleisli cells over prefunctors
-(`KleisliSpan.Cell.hComp`), which uses naturality of `Paths.flatten` as a square
+(`KleisliSpan.Square.hComp`), which uses naturality of `Paths.flatten` as a square
 (`KleisliSpan.flattenMap`).
-* The identity functor and composition of functors, built on `KleisliSpan.Cell.id` and
-  `KleisliSpan.Cell.vComp`. These transport cells along `Prefunctor.mapPath_id` and
+* The identity functor and composition of functors, built on `KleisliSpan.Square.id` and
+  `KleisliSpan.Square.vComp`. These transport cells along `Prefunctor.mapPath_id` and
   `Prefunctor.mapPath_comp_apply`, so their laws are proved elementwise, with `Square.ext`, the
-  interchange law `KleisliSpan.Cell.hComp_vComp_map_square_heq` and heterogeneous congruence
+  interchange law `KleisliSpan.Square.hComp_vComp_map_square_heq` and heterogeneous congruence
   lemmas.
 
 **Transformations.** A transformation from `F = (f, _)` to `G = (g, _)` is a Kleisli cell `θ`
@@ -235,7 +235,7 @@ Elementwise it is naturality in arrows and the paper's `θ_q (Fα) = (Gα)(θ_{p
 * a transformation `μ` from `T ∘ T` to `T`;
 * the unit laws `μ ∘ ηT = id` and `μ ∘ Tη = id`, and associativity `μ ∘ Tμ = μ ∘ μT`, as
   equations between the component cells. Whiskering is vertical composition of Kleisli cells
-  (`KleisliSpan.Cell.vComp`) with `KleisliSpan.idMap T` or with the cell of `T`, and the
+  (`KleisliSpan.Square.vComp`) with `KleisliSpan.idMap T` or with the cell of `T`, and the
   composites are `compCell`. Stated on the component cells, the laws need no comparison of
   transformations between functors that are only propositionally equal, such as `T ∘ 1` and
   `T`.
