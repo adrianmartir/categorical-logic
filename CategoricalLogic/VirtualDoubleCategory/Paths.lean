@@ -4,14 +4,14 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import CategoricalLogic.QuiverSpan
+import CategoricalLogic.VirtualDoubleCategory.QuiverSpan
 import Mathlib.CategoryTheory.PathCategory.Basic
 
 /-!
 # The paths monad
 
 `Paths` should be thought of as a monad on the virtual double category of quivers,
-prefunctors and quiver spans. As in `CategoricalLogic.QuiverSpan`, this is a guiding principle
+prefunctors and quiver spans. As in `CategoricalLogic.VirtualDoubleCategory.QuiverSpan`, this is a guiding principle
 and not an instance: we never state what a monad on a virtual double category is here. Instead
 each definition says in its docstring which piece of the monad structure it is.
 

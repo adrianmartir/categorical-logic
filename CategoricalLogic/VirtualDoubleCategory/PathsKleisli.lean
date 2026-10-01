@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import CategoricalLogic.Paths
+import CategoricalLogic.VirtualDoubleCategory.Paths
 
 /-!
 # The Kleisli virtual double category of `Paths`
@@ -12,9 +12,9 @@ import CategoricalLogic.Paths
 The horizontal Kleisli virtual double category of the `Paths` monad, following *A unified
 framework for generalized multicategories*: a horizontal arrow from `Q` to `R` is a quiver span
 from `Q` to `Paths R`. Virtual double categories are the monoids here; they are defined in
-`CategoricalLogic.VirtualDoubleCategory`.
+`CategoricalLogic.VirtualDoubleCategory.Basic`.
 
-Following the orientation of `CategoricalLogic.QuiverSpan`, the right leg `Paths R` carries the
+Following the orientation of `CategoricalLogic.VirtualDoubleCategory.QuiverSpan`, the right leg `Paths R` carries the
 sources: a square of a Kleisli span has a single edge as target and a path as source.
 
 ## Main definitions

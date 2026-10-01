@@ -2,9 +2,10 @@ This file should not contain any references to old identifiers or old states. Re
 
 We will define virtual double categories and T-operads for a monad T on a virtual double category in multiple layers.
 
-These are four modules, directly in the `CategoricalLogic` directory, each importing the
-previous one: `QuiverSpan.lean`, `Paths.lean`, `PathsKleisli.lean` and
-`VirtualDoubleCategory.lean`. One section below per module.
+These are five modules in the `CategoricalLogic/VirtualDoubleCategory` directory, each
+importing the previous one: `QuiverSpan.lean`, `Paths.lean`, `PathsKleisli.lean`, `Basic.lean`
+(virtual double categories) and `SpanQuiv.lean` (the example of quiver spans). One section
+below per module.
 
 ### Quiver spans
 
@@ -63,7 +64,7 @@ Composition of prefunctors is already defined, so we only need
   single span with the n-ary composite of the one-element path on it (`composePathToPath`,
   which is the left unitor).
 * n-ary horizontal composition of squares. It needs the chains of squares of `Paths.lean`, so
-  it lives with the example in `VirtualDoubleCategory.lean` (`SpanQuiv.hCompPath`).
+  it lives with the example in `SpanQuiv.lean` (`SpanQuiv.hCompPath`).
 
 **Cells with n-ary source.**
 
@@ -174,7 +175,7 @@ The `PathsKleisli.lean` module should contain the Kleisli virtual double categor
 
 ### Virtual double categories
 
-The `VirtualDoubleCategory.lean` module should contain virtual double categories, their
+The `Basic.lean` module should contain virtual double categories, their
 functors, transformations between functors, and monads on a virtual double category. A
 virtual double category is a monoid in the Kleisli virtual double category of the previous
 section, so the module is that definition unfolded and then built upon.
