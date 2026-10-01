@@ -15,8 +15,6 @@ arbitrary-length paths.
 
 ## Main definitions
 
-* `Paths`: A quiver whose edges are `Quiver.Path`s, equipped with monad-like operations
-  (unit and flattening) satisfying the monad laws.
 * `Cell`: A cell from a path of profunctors to a target profunctor, defined as a map
   out of `PathProd` that preserves the wedge relation and satisfies naturality conditions.
 * `Cell.ofComp`: Composition of cells via a binatural transformation.
@@ -36,84 +34,6 @@ A cell from a path of profunctors to a target profunctor `K` consists of:
 namespace CategoryTheory.Profunctor
 
 universe u v
-
-/-! ## Paths as a monad on quivers -/
-
-/-- `Paths V` is a type wrapper around `V` equipped with a quiver structure where an edge
-from `a` to `b` is a `Quiver.Path a b` in the original quiver. -/
-structure Paths (V : Type*) where
-  /-- The underlying vertex. -/
-  val : V
-
-/-- The quiver instance on `Paths V`: edges are paths in the original quiver. -/
-instance {V : Type*} [Quiver V] : Quiver (Paths V) where
-  Hom a b := Quiver.Path a.val b.val
-
-namespace Paths
-
-variable {V : Type*} [Quiver V]
-
-/-- The unit of the `Paths` monad: sends each edge to a singleton path. -/
-def η : Prefunctor V (Paths V) where
-  obj v := ⟨v⟩
-  map f := .cons .nil f
-
-/-- Flatten a path of paths into a single path by concatenation.
-This is the action on morphisms of the multiplication of the `Paths` monad. -/
-def flatten {a b : Paths V} :
-    Quiver.Path a b → (a ⟶ b)
-  | .nil => .nil
-  | .cons p e => (flatten p).comp e
-
-/-- The multiplication of the `Paths` monad as a prefunctor. -/
-def μ : Prefunctor (Paths (Paths V)) (Paths V) where
-  obj v := ⟨v.val.val⟩
-  map := flatten
-
-/-! ### Monad laws -/
-
-/-- Left unit law: flattening a singleton path-of-paths recovers the original path. -/
-theorem left_unit {a b : Paths V} (p : a ⟶ b) :
-    flatten (.cons .nil p) = p :=
-  Quiver.Path.nil_comp p
-
-/-
-Right unit law: embedding each edge as a singleton and then flattening
-recovers the original path.
--/
-theorem right_unit {a b : V} (p : Quiver.Path a b) :
-    @flatten V _ ⟨a⟩ ⟨b⟩ (@Prefunctor.mapPath V _ (Paths V) _ η a b p) = p := by
-  induction p with
-  | nil => rfl
-  | cons p _ ih =>
-    change (flatten (@Prefunctor.mapPath V _ (Paths V) _ η _ _ p)).comp _ = _
-    exact congrArg (fun q ↦ Quiver.Path.comp q (η.map _)) ih
-
-/-- Flattening distributes over path composition. -/
-theorem flatten_comp {a b c : Paths V} (p : Quiver.Path a b) (q : Quiver.Path b c) :
-    flatten (p.comp q) = (flatten p).comp (flatten q) := by
-  induction q with
-  | nil => rfl
-  | cons q e ih =>
-    show (flatten (p.comp q)).comp e = (flatten p).comp ((flatten q).comp e)
-    rw [ih, @Quiver.Path.comp_assoc V]
-
-/-
-Associativity: flattening a path of paths of paths in either order gives the same
-result.
--/
-theorem assoc {a b : Paths (Paths V)}
-    (p : @Quiver.Path (Paths (Paths V)) _ a b) :
-    @flatten V _ ⟨a.val.val⟩ ⟨b.val.val⟩ (@Prefunctor.mapPath _ _ (Paths V) _ μ _ _ p) =
-    @flatten V _ ⟨a.val.val⟩ ⟨b.val.val⟩ (flatten p) := by
-  induction p with
-  | nil => rfl
-  | cons p e ih =>
-    show (flatten (μ.mapPath p)).comp (flatten e) = flatten ((flatten p).comp e)
-    exact (congrArg (fun q ↦ Quiver.Path.comp q (flatten e)) ih).trans
-      (flatten_comp (flatten p) e).symm
-
-end Paths
 
 /-! ## Cell definition -/
 
