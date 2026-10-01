@@ -181,9 +181,8 @@ section, so the module is that definition unfolded and then built upon.
 
 **Virtual double categories.**
 * A virtual double category is a quiver `Q` together with a Kleisli span `A : Q ⇸ Q`, a
-  nullary cell into it and a binary cell into it. The data without the axioms is
-  `VirtualDoubleCategoryStruct`, following mathlib's split of `CategoryStruct` from
-  `Category`.
+  nullary cell into it and a binary cell into it. It is a single structure
+  `VirtualDoubleCategory` holding the data and the monoid laws.
 * The dictionary is worth a docstring: vertices of `Q` are objects, edges of `Q` are
   proarrows, `A.arr x y` are the arrows from `y` to `x`, and `A.square e p a b` is a cell with
   n-ary source `p`, unary target `e`, and side arrows `a` from the start of `p` to the start
@@ -193,25 +192,28 @@ section, so the module is that definition unfolded and then built upon.
   one, composition of arrows and substitution of cells from the binary one (`idArr`,
   `idCell`, `compArr`, `subst`). `compArr` is in diagrammatic order. The cell halves are
   what the term calculus will actually be written against.
-* Axioms — associativity and unit, for arrows and for cells — as fields of
-  `VirtualDoubleCategory`, stated elementwise through the accessors above rather than as
-  equations between morphisms of spans. The latter would need unitors and an associator for
-  Kleisli composition. For cells the boundaries agree only propositionally, so one side is
-  transported with `QuiverSpan.castSquare`. Associativity is stated for a chain `γ.flatten`
-  concatenated from a chain of chains `γ`, which avoids splitting chains.
+* Axioms: the monoid laws `one_mul`, `mul_one` and `mul_assoc`, as equations between
+  morphisms of Kleisli spans, built from whiskering (`KleisliSpan.whiskerLeft`,
+  `KleisliSpan.whiskerRight`), the unitors (`KleisliSpan.leftUnitor`,
+  `KleisliSpan.rightUnitor`) and the inverse of the associator (`KleisliSpan.associatorInv`).
+  Only the inverse of the associator is needed, and it only concatenates chains. Evaluated at
+  an element, the laws are the unit and associativity laws of arrows and cells; the ones for
+  arrows and `idCell_subst` are derived.
+* All of this is a single structure `VirtualDoubleCategory`; there is no separate structure
+  for the data.
 * The accessors are the elementwise accessors of nullary and binary Kleisli cells
-  (`KleisliSpan.NullaryCell.arr`, `.square`, `.chain` and `KleisliSpan.BinaryCell.arr`,
-  `.square`, `.chain`), so they are derived from the Kleisli API.
+  (`KleisliSpan.NullaryCell.arr`, `.square` and `KleisliSpan.BinaryCell.arr`, `.square`).
 
 **Functors.** A functor from `(Q, A)` to `(R, B)` is a prefunctor `f : Q ⥤q R` together with
 a Kleisli cell from `A` to `B` over `f` and `f`, so a square from `A` to `B` over `f` and
-`Paths f`. The data without the axioms is `VirtualDoubleCategoryStruct.Functor`.
+`Paths f`. It is a single structure `VirtualDoubleCategory.Functor`, data and axioms.
 * Elementwise: maps on objects, proarrows, arrows and cells, where `f` acts on the n-ary
   source of a cell through `Prefunctor.mapPath`.
 * Axioms: preservation of identity arrows, identity cells and substitution.
 * The identity functor and composition of functors. The monad definition below needs both.
   Neither is free: the identity functor has to transport cells along
-  `Prefunctor.mapPath_id`, and composition along `Prefunctor.mapPath_comp_apply`.
+  `Prefunctor.mapPath_id`, and composition along `Prefunctor.mapPath_comp_apply`. Their
+  Kleisli cells are `KleisliSpan.Cell.id` and `KleisliSpan.Cell.vComp`.
 
 **Transformations.** A transformation from `F = (f, _)` to `G = (g, _)` consists of
 * for each object `x`, an arrow `θ x` from `f x` to `g x`, i.e. `θ x : B.arr (g x) (f x)`;
@@ -235,7 +237,7 @@ a Kleisli cell from `A` to `B` over `f` and `f`, so a square from `A` to `B` ove
   of functors, so that `T ∘ T` and the identity functor need no proofs to appear in them.
 
 **Example.** Quivers, prefunctors and quiver spans form a virtual double category, whose data
-is `SpanQuiv.virtualDoubleCategoryStruct`. Its arrows from `r` to `q` are the prefunctors
+is `SpanQuiv.hom`, `SpanQuiv.id` and `SpanQuiv.comp` (the monoid laws are not proved yet). Its arrows from `r` to `q` are the prefunctors
 `r ⥤q q`, composition of arrows is diagrammatic composition of prefunctors, the identity cell
 on a span is the left unitor, and substitution is n-ary horizontal composition
 (`SpanQuiv.hCompPath`) followed by vertical composition. It lands one universe up.
