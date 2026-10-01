@@ -99,15 +99,16 @@ layer is the ordinary free category monad on quivers.
 * `Paths Q` and its unit `Paths.of`, both from mathlib
 * `Paths` on a prefunctor (`Paths.map`), from mathlib's `Cat.freeMap`. A Kleisli cell over
   prefunctors `f` and `g` has `Paths g` as its right boundary.
-* The multiplication, flattening a path of paths (`Quiver.Path.flatten` and
-  `Paths.flatten`). It must reduce definitionally on `nil` and `cons`.
+* The multiplication, flattening a path of paths (`Paths.flatten`). It is mathlib's
+  `pathComposition` for the path category, so on edges it is `composePath`, which reduces
+  definitionally on `nil` and `cons`.
 * Functoriality, `Paths 𝟭q = 𝟭q` and `Paths (F ⋙q G) = Paths F ⋙q Paths G` (mathlib
   `mapPath_id` and `mapPath_comp_apply`) (not needed). Worth knowing only because neither is
   `rfl`, which is why the two forms of `Paths` on cells below cannot be collapsed into one.
 * Naturality of the unit and of the multiplication in prefunctors (mathlib `mapPath_toPath`)
   (not needed)
 * The monad laws (not needed). One of them is already proved as
-  `Quiver.Path.flatten_mapPath_of`; keep it, it is one line.
+  `Paths.flatten_map_mapPath_of`; keep it, it is one line.
 
 **The horizontal direction.** Horizontal arrows are quiver spans.
 * `Paths` on a span (`QuiverSpan.PathSquare` and `QuiverSpan.paths`). A cell of `Paths A`
@@ -136,8 +137,9 @@ layer is the ordinary free category monad on quivers.
   (not needed)
 
 **Universes.** `Paths` raises the edge universe and is idempotent after one application, so
-`SpanQuiv` is `Quiv.{max u v, v}`: with an unconstrained pair of universes `Paths` would not
-act on it at all. The apex universes then look after themselves.
+`SpanQuiv` carries a `Quiver.{max u v}` on `Type v`: with an unconstrained pair of universes
+`Paths` would not act on it at all. It is its own two-field structure rather than a synonym of
+mathlib's `Quiv`, which keeps the universe linter satisfied without switching it off. The apex universes then look after themselves.
 
 Everything above is data or a short induction. Hand any proof that turns out to be hard to
 Aristotle rather than letting the file grow around it.
@@ -148,7 +150,11 @@ The `PathsKleisli.lean` module should contain the Kleisli virtual double categor
 `Paths`. Virtual double categories are the monoids there, but they get their own module.
 
 **Kleisli spans and their composition.**
-* A Kleisli span from `Q` to `R` is a quiver span from `Q` to `Paths R` (`KleisliSpan`).
+* A Kleisli span from `Q` to `R` is a quiver span from `Q` to `Paths R`. There is no separate
+  type: as an abbreviation its apex universes could not be told apart from its type, which the
+  universe linter rightly flags. The operations below live in the namespace `KleisliSpan` and
+  are called by their full names, since the dot notation `A.comp` on a quiver span is
+  horizontal composition.
 * The Kleisli identity (`KleisliSpan.id`): the restriction of the horizontal identity on
   `Paths Q` along `Paths.of Q`, which makes the unit of the monad visible in the definition
   instead of buried in it. Its arrows are equations `(Paths.of Q).obj x = (𝟭q _).obj y`, so

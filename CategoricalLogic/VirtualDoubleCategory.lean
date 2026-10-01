@@ -46,7 +46,7 @@ edges of `Q`: a monoid in the Kleisli virtual double category of `Paths`, withou
 See the module docstring for the dictionary. -/
 structure VirtualDoubleCategoryStruct (Q : Type u) [Quiver.{v} Q] where
   /-- The arrows and the cells. -/
-  hom : KleisliSpan.{u, v, u, v, w, z} Q Q
+  hom : QuiverSpan.{u, v, u, max u v, w, z} Q (Paths Q)
   /-- The unit of the monoid: identity arrows and identity cells. -/
   id : KleisliSpan.NullaryCell hom
   /-- The multiplication of the monoid: composition of arrows and substitution of cells. -/
@@ -102,7 +102,7 @@ instance (C : Paths SpanQuiv.{u, v}) : Quiver.{max u v} C.α := SpanQuiv.str' C
 /-- The Kleisli span of the virtual double category of quivers, prefunctors and quiver spans.
 Its arrows from `r` to `q` are the prefunctors `r ⥤q q`, and its cells with source a path `p`
 of spans and target a span `A` are the multisquares `MultiSquare p A`. -/
-def hom : KleisliSpan SpanQuiv.{u, v} SpanQuiv.{u, v} where
+def hom : QuiverSpan SpanQuiv.{u, v} (Paths SpanQuiv.{u, v}) where
   arr q r := r.α ⥤q q.α
   square A p f f' := MultiSquare p A f f'
 
@@ -114,7 +114,7 @@ def hCompPath {q : SpanQuiv.{u, v}} {r : Paths SpanQuiv.{u, v}} {F : hom.arr q r
     {n : Quiver.Path q q'} → {m : @Quiver.Path (Paths SpanQuiv.{u, v}) _ r r'} →
     {G : hom.arr q' r'} →
     PathSquare hom F n m G →
-      Square (composePath (Quiver.Path.flatten (Q := SpanQuiv.{u, v}) m)) (composePath n) F G
+      Square (composePath ((Paths.flatten SpanQuiv.{u, v}).map m)) (composePath n) F G
   | _, _, _, _, _, .nil => Square.hId F
   | _, _, _, _, _, .cons c t =>
       Square.vComp (composePathCompInv _ _) (Square.hComp (hCompPath c) t)

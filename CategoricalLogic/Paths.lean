@@ -23,7 +23,8 @@ composition would need.
 ## Main definitions
 
 * `Paths.map`, `Paths.flatten`: the functor part and the multiplication in the vertical
-  direction; the unit is mathlib's `Paths.of`.
+  direction, from mathlib's `Cat.freeMap` and `pathComposition`; the unit is mathlib's
+  `Paths.of`.
 * `QuiverSpan.PathSquare`, `QuiverSpan.paths`: the functor part in the horizontal direction.
 * `QuiverSpan.Square.paths`, `QuiverSpan.Hom.paths`: the functor part on cells.
 -/
@@ -46,39 +47,29 @@ def map {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R] (F :
 
 end Paths
 
-/-- Flatten a path of paths by concatenation: the multiplication of the monad on edges.
-
-It is defined through `Quiver.Path.rec` so that it reduces definitionally on `nil` and
-`cons`. -/
-def _root_.Quiver.Path.flatten {Q : Type u} [Quiver.{v} Q] {x y : Paths Q}
-    (p : @Quiver.Path (Paths Q) _ x y) : @Quiver.Path Q _ x y :=
-  @Quiver.Path.rec (Paths Q) _ x (fun t _ => @Quiver.Path Q _ x t)
-    Quiver.Path.nil (fun {_ _} _ e ih => ih.comp e) y p
-
 namespace Paths
 
-/-- The multiplication of the monad in the vertical direction.
+/-- The multiplication of the monad in the vertical direction: flattening a path of paths by
+concatenation. This is mathlib's `pathComposition` for the path category `Paths Q`, so on
+edges it is `composePath`, which reduces definitionally on `nil` and `cons`.
 
 The span-level multiplication, which would make Kleisli composition associative, is not
 defined: Kleisli composition only uses the multiplication in this direction. -/
-def flatten (Q : Type u) [Quiver.{v} Q] : Paths (Paths Q) ⥤q Paths Q where
-  obj x := x
-  map p := Quiver.Path.flatten (Q := Q) p
-
-end Paths
+def flatten (Q : Type u) [Quiver.{v} Q] : Paths (Paths Q) ⥤q Paths Q :=
+  (pathComposition (Paths Q)).toPrefunctor
 
 /-- A unit law of the monad in the vertical direction: flattening the paths of one-element
 paths is the identity. -/
-theorem _root_.Quiver.Path.flatten_mapPath_of {Q : Type u} [Quiver.{v} Q] {x y : Q}
-    (p : Quiver.Path x y) :
-    Quiver.Path.flatten (@Prefunctor.mapPath Q _ (Paths Q) _ (Paths.of Q) x y p) = p := by
+theorem flatten_map_mapPath_of {Q : Type u} [Quiver.{v} Q] {x y : Q} (p : Quiver.Path x y) :
+    (flatten Q).map ((Paths.of Q).mapPath p) = p := by
   induction p with
   | nil => rfl
   | cons p e ih =>
-    change (Quiver.Path.flatten
-      (@Prefunctor.mapPath Q _ (Paths Q) _ (Paths.of Q) _ _ p)).comp (Quiver.Hom.toPath e) = _
+    change ((flatten Q).map ((Paths.of Q).mapPath p)).comp (Quiver.Hom.toPath e) = _
     rw [ih]
     rfl
+
+end Paths
 
 /-! ### The horizontal direction -/
 

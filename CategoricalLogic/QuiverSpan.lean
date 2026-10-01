@@ -183,24 +183,25 @@ end QuiverSpan
 
 /-! ### n-ary horizontal composition -/
 
--- As for mathlib's `Quiv`, the universes only occur together in the type, so they are always
--- given explicitly.
-set_option linter.checkUnivs false in
 /-- Bundled quivers, as the vertices of the quiver whose edges are quiver spans; n-ary
 horizontal composition is then composition along a `Quiver.Path` of spans.
 
 The edge universe is pinned to `max u v` so that it absorbs the vertex universe `v`: `Paths`
 raises the edge universe of a quiver to exactly that, so only with this pinning does it act on
-the quivers collected here. This is `Quiv` as a type synonym, so that it does not pick up the
-category structure whose morphisms are prefunctors. -/
-def SpanQuiv : Type (max (u + 1) (v + 1)) := Quiv.{max u v, v}
+the quivers collected here. This is a structure of its own rather than mathlib's `Quiv`, whose
+category structure has prefunctors as morphisms. -/
+structure SpanQuiv where
+  /-- The vertices. -/
+  α : Type v
+  /-- The quiver structure. -/
+  str : Quiver.{max u v} α
 
 namespace SpanQuiv
 
 instance : CoeSort SpanQuiv.{u, v} (Type v) where
   coe C := C.α
 
-instance str' (C : SpanQuiv.{u, v}) : Quiver.{max u v} C := Quiv.str' C
+instance str' (C : SpanQuiv.{u, v}) : Quiver.{max u v} C := C.str
 
 /-- Quiver spans are the edges between bundled quivers. The apex universes are pinned to
 `max u v`, which is where `QuiverSpan.id` and `QuiverSpan.comp` already land. -/
