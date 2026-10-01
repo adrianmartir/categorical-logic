@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import CategoricalLogic.VirtualDoubleCategory.Basic
+module
+
+public import CategoricalLogic.VirtualDoubleCategory.Basic
 
 /-!
 # The virtual double category of quiver spans
@@ -21,6 +23,8 @@ composition. It lands one universe up.
 * `SpanQuiv.hom`, `SpanQuiv.id`, `SpanQuiv.comp`: the data.
 * `SpanQuiv.virtualDoubleCategory`: the virtual double category.
 -/
+
+@[expose] public section
 
 namespace CategoryTheory
 

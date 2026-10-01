@@ -4,15 +4,17 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti
 -/
 
+module
 
-
-import CategoricalLogic.Operad
-import Mathlib.CategoryTheory.Discrete.Basic
-import Mathlib.CategoryTheory.Discrete.SumsProducts
+public import CategoricalLogic.Operad
+public import Mathlib.CategoryTheory.Discrete.Basic
+public import Mathlib.CategoryTheory.Discrete.SumsProducts
 
 /-!
 We construct the free T-operad on a profunctor, using a construction through terms.
 -/
+
+@[expose] public section
 
 
 

@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import CategoricalLogic.VirtualDoubleCategory.PathsKleisli
+module
+
+public import CategoricalLogic.VirtualDoubleCategory.PathsKleisli
 
 /-!
 # Virtual double categories
@@ -41,6 +43,8 @@ compared with `QuiverSpan.castSquare` and heterogeneous equality.
 
 * Identity transformations, vertical composition and whiskering of transformations.
 -/
+
+@[expose] public section
 
 namespace CategoryTheory
 

@@ -1,8 +1,12 @@
+module
 
 
 
-import Mathlib
-import CategoricalLogic.Deprecated.Assoc
+
+public import Mathlib
+public import CategoricalLogic.Deprecated.Assoc
+
+@[expose] public section
 -- import Init
 -- import Mathlib.Data.Fin.VecNotation
 -- import Mathlib.Algebra.BigOperators.Group.Finset.Defs

@@ -4,9 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
+module
 
-import Mathlib.CategoryTheory.Discrete.Basic
-import CategoricalLogic.Profunctor.Basic
+public import Mathlib.CategoryTheory.Discrete.Basic
+public import CategoricalLogic.Profunctor.Basic
 
 /-!
 ## Discrete Profunctors
@@ -28,6 +29,8 @@ We provide `@[simp]` lemmas for `map`, `mapL`, and `mapR` showing they reduce to
 (or `cast`) when applied to discrete morphisms, as well as extensionality and naturality
 results for natural transformations between discrete profunctors.
 -/
+
+@[expose] public section
 
 
 

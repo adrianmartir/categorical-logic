@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import Mathlib.CategoryTheory.Category.Quiv
+module
+
+public import Mathlib.CategoryTheory.Category.Quiv
 
 /-!
 # Quiver spans
@@ -43,6 +45,8 @@ prefunctors `F`, `G` from the feet of `A` to the feet of `B`.
 * `SpanQuiv.composePath`: n-ary horizontal composition along a path of spans.
 * `SpanQuiv.MultiSquare`: squares with n-ary source.
 -/
+
+@[expose] public section
 
 namespace CategoryTheory
 

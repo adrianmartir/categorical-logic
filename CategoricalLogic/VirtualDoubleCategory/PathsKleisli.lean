@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import CategoricalLogic.VirtualDoubleCategory.Paths
+module
+
+public import CategoricalLogic.VirtualDoubleCategory.Paths
 
 /-!
 # The Kleisli virtual double category of `Paths`
@@ -36,6 +38,8 @@ sources: a square of a Kleisli span has a single edge as target and a path as so
   nullary and binary cells elementwise, on arrows and on squares. The accessors of virtual
   double categories are these.
 -/
+
+@[expose] public section
 
 namespace CategoryTheory
 
@@ -84,7 +88,7 @@ def whiskerLeft {P : Type u₁} {Q : Type u₂} {R : Type u₃}
     (QuiverSpan.Square.id _)
 
 /-- The square of the left unitor, from the components of a square of the composite. -/
-private def leftUnitorSquare {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
+def leftUnitorSquare {Q : Type u₁} {R : Type u₂} [Quiver.{v₁} Q] [Quiver.{v₂} R]
     {A : KleisliSpan Q R} {x x' : Q} {y y' : Paths R} {e : x ⟶ x'} {e' : y ⟶ y'}
     {a : A.arr x y} {b : A.arr x' y'} {n : Quiver.Path x x'}
     {m : Quiver.Path (V := Paths R) y y'} (hn : (Paths.of Q).map e = n)

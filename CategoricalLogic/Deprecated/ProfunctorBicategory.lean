@@ -3,7 +3,10 @@ Copyright (c) 2026 Dagur Asgeirsson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Dagur Asgeirsson
 -/
-import CategoricalLogic.Deprecated.ProfunctorComp
+
+module
+
+public import CategoricalLogic.Deprecated.ProfunctorComp
 
 /-!
 # The Profunctor Bicategory
@@ -11,6 +14,8 @@ import CategoricalLogic.Deprecated.ProfunctorComp
 This file defines the bicategory `ProfCat` whose objects are categories and whose 1-morphisms are
 profunctors.
 -/
+
+@[expose] public section
 
 universe w v u
 

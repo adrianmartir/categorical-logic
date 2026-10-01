@@ -1,11 +1,13 @@
-import CategoricalLogic.Operad
-import CategoricalLogic.Profunctor.Basic
-import CategoricalLogic.Profunctor.Cells
-import CategoricalLogic.Profunctor.Product
+module
+
+public import CategoricalLogic.Operad
+public import CategoricalLogic.Profunctor.Basic
+public import CategoricalLogic.Profunctor.Cells
+public import CategoricalLogic.Profunctor.Product
 -- import CategoricalLogic.Profunctor.Discrete
-import CategoricalLogic.Term
-import CategoricalLogic.VirtualDoubleCategory.QuiverSpan
-import CategoricalLogic.VirtualDoubleCategory.Paths
-import CategoricalLogic.VirtualDoubleCategory.PathsKleisli
-import CategoricalLogic.VirtualDoubleCategory.Basic
-import CategoricalLogic.VirtualDoubleCategory.SpanQuiv
+public import CategoricalLogic.Term
+public import CategoricalLogic.VirtualDoubleCategory.QuiverSpan
+public import CategoricalLogic.VirtualDoubleCategory.Paths
+public import CategoricalLogic.VirtualDoubleCategory.PathsKleisli
+public import CategoricalLogic.VirtualDoubleCategory.Basic
+public import CategoricalLogic.VirtualDoubleCategory.SpanQuiv

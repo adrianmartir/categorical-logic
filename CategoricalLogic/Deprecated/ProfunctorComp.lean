@@ -3,8 +3,11 @@ Copyright (c) 2026 Dagur Asgeirsson. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Dagur Asgeirsson
 -/
-import Mathlib.CategoryTheory.Limits.Types.End
-import Mathlib.CategoryTheory.Profunctor.Basic
+
+module
+
+public import Mathlib.CategoryTheory.Limits.Types.End
+public import Mathlib.CategoryTheory.Profunctor.Basic
 
 /-!
 # Composition of Profunctors
@@ -27,6 +30,8 @@ This file defines composition of profunctors. Given profunctors `P : C ⥤ Dᵒ�
 These satisfy the coherence laws for a bicategory, see the file
 `CategoryTheory.Profunctor.Bicategory`.
 -/
+
+@[expose] public section
 
 universe w w' v u
 

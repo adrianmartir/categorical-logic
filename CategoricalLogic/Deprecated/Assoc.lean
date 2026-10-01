@@ -1,11 +1,15 @@
+module
 
 
-import Mathlib.CategoryTheory.Types.Basic
-import Mathlib.Logic.Equiv.Fin.Basic
-import Mathlib.Algebra.Group.Defs
-import Mathlib.CategoryTheory.Functor.Basic
-import Mathlib.CategoryTheory.Monad.Basic
-import Mathlib.CategoryTheory.Monoidal.Category
+
+public import Mathlib.CategoryTheory.Types.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
+public import Mathlib.Algebra.Group.Defs
+public import Mathlib.CategoryTheory.Functor.Basic
+public import Mathlib.CategoryTheory.Monad.Basic
+public import Mathlib.CategoryTheory.Monoidal.Category
+
+@[expose] public section
 
 
 

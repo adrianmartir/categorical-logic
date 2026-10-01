@@ -3,7 +3,10 @@ Copyright (c) 2026 Adrian Marti. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
-import Mathlib
+
+module
+
+public import Mathlib
 
 /-!
 # The Bicategory of Spans
@@ -28,6 +31,8 @@ Given a category C with pullbacks, we construct the bicategory Span(C) of spans 
 * Composition of spans uses pullbacks.
 * The identity span on c is (c, 𝟙 c, 𝟙 c).
 -/
+
+@[expose] public section
 
 namespace CategoryTheory
 

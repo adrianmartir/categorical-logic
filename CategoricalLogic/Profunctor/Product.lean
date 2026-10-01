@@ -4,10 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
+module
 
-import CategoricalLogic.Profunctor.Basic
-import Mathlib.Combinatorics.Quiver.Path
-import Mathlib.Logic.Relation
+public import CategoricalLogic.Profunctor.Basic
+public import Mathlib.Combinatorics.Quiver.Path
+public import Mathlib.Logic.Relation
 
 /-!
 # Path Products and Tensor Products of Profunctors
@@ -43,6 +44,8 @@ from `C` to `D` (contravariant in `C`, covariant in `D`). This choice ensures th
 `Profunctor.mapL` and `Profunctor.mapR` operations directly give the correct actions on
 `PathProd` boundaries.
 -/
+
+@[expose] public section
 
 
 

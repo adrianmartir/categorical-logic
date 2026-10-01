@@ -4,9 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti
 -/
 
+module
 
+public import Mathlib.CategoryTheory.Category.Cat
 
-import Mathlib.CategoryTheory.Category.Cat
+@[expose] public section
 
 
 

@@ -4,9 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti
 -/
 
-import Mathlib.CategoryTheory.Monad.Basic
-import Mathlib.CategoryTheory.Category.Cat
-import CategoricalLogic.Profunctor.Basic
+module
+
+public import Mathlib.CategoryTheory.Monad.Basic
+public import Mathlib.CategoryTheory.Category.Cat
+public import CategoricalLogic.Profunctor.Basic
 
 /-!
 A formalization of operads based on profunctors. We avoid using the bicategory of profunctors
@@ -17,6 +19,8 @@ a computational interpretation of operads.
 References:
 * [A unified framework for generalized multicategories](https://arxiv.org/abs/0907.2460)
 -/
+
+@[expose] public section
 
 namespace CategoryTheory
 

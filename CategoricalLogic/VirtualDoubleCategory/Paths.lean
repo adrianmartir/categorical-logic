@@ -4,8 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import CategoricalLogic.VirtualDoubleCategory.QuiverSpan
-import Mathlib.CategoryTheory.PathCategory.Basic
+module
+
+public import CategoricalLogic.VirtualDoubleCategory.QuiverSpan
+public import Mathlib.CategoryTheory.PathCategory.Basic
 
 /-!
 # The paths monad
@@ -36,6 +38,8 @@ only here elementwise (`PathSquare.unzip`), and the monad laws on spans and cell
   chain of each factor.
 * `QuiverSpan.Square.paths`, `QuiverSpan.Hom.paths`: the functor part on cells.
 -/
+
+@[expose] public section
 
 namespace CategoryTheory
 

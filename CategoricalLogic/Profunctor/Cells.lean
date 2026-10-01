@@ -4,8 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
+module
 
-import CategoricalLogic.Profunctor.Product
+public import CategoricalLogic.Profunctor.Product
 
 /-!
 # Cells of Profunctors
@@ -28,6 +29,8 @@ A cell from a path of profunctors to a target profunctor `K` consists of:
    `WedgeRel`, they map to the same element of `K`.
 
 -/
+
+@[expose] public section
 
 
 

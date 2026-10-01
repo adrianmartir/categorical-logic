@@ -4,10 +4,14 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Adrian Marti, Aristotle
 -/
 
-import Mathlib
-import Mathlib.CategoryTheory.Profunctor.Basic
+module
+
+public import Mathlib
+public import Mathlib.CategoryTheory.Profunctor.Basic
 
 /-! Compatibility notation for the elementwise use of the profunctor API. -/
+
+@[expose] public section
 
 namespace CategoryTheory.Profunctor
 
