@@ -14,6 +14,8 @@ The main source for our formalization of operads is in the folder `GeneralizedMu
 
 `USING_ARISTOTLE.md` contains instructions on how to use the external AI-agent prover Aristotle.
 
+Commit coherent changes by default. When completing complex tasks, commit them in stages.
+
 Style guide:
 * Don't use tactics in term mode.
 * If you need a concept that is in mathlib, use import it rather than writing your own version
