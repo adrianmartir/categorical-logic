@@ -54,7 +54,7 @@ for all choices of objects `d : Cₙ` and `c : C₀`, satisfying:
 
 This generalizes `BiNatTrans` (the case of two profunctors) to paths of
 arbitrary length. -/
-structure Cell {C D : ProfCat.{v, u}} (p : @Quiver.Path ProfCat _ C D)
+structure Cell {C D : ProfQuiv.{v, u}} (p : @Quiver.Path ProfQuiv _ C D)
     (K : Profunctor.{v} C D) where
   /-- The multi-application map: takes elements from the path product and produces
       an element of the target profunctor. -/
