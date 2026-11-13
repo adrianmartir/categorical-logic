@@ -30,30 +30,26 @@ and the functor tensor product as the quotient by this relation.
 
 ## Design notes
 
-The base case of `PathProd` for the empty path `.nil` uses `ULift (c ⟶ d)`. This ensures
-that a cell from the empty path to `K` is equivalent to a dinatural element (unit) of `K`,
-and a cell from a singleton path `[H]` to `K` is equivalent to a natural transformation from
-`H` to `K`.
+An edge from `C` to `D` in `ProfQuiv` is a profunctor `P : Profunctor C D`, covariant in `C` and
+contravariant in `D`, as in mathlib's `P.comp Q`. For a path `p` from `C` to `D`,
+`PathProd p c d` takes `c : C` (the start of the path) and `d : D` (the end of the path) in the
+same order as `Profunctor.app`, and lists the factors in the order of the path. `PathProd.mapL`
+acts covariantly on `c` and `PathProd.mapR` contravariantly on `d`, matching `Profunctor.mapL`
+and `Profunctor.mapR`.
 
-The first argument of `PathProd` is the target boundary and the second is the source boundary,
-matching the convention of `Profunctor.obj` where the first argument is from the contravariant
-side.
-
-An edge from `C` to `D` in `ProfQuiv` is a `Profunctor D C`, which represents a profunctor
-from `C` to `D` (contravariant in `C`, covariant in `D`). This choice ensures that the
-`Profunctor.mapL` and `Profunctor.mapR` operations directly give the correct actions on
-`PathProd` boundaries.
+The base case of `PathProd` for the empty path `.nil` is `ULift (d ⟶ c)`, a lift of
+`Profunctor.id.app c d`. This ensures that a cell from the empty path to `K` is equivalent to a
+dinatural element (unit) of `K`, and a cell from a singleton path `[H]` to `K` is equivalent to a
+natural transformation from `H` to `K`.
 -/
 
 @[expose] public section
-
-
 
 namespace CategoryTheory
 
 universe u v
 
-/-! ## The profunctor category -/
+/-! ## The profunctor quiver -/
 
 /-- `ProfQuiv` bundles a type with a category structure and equips these bundled
 categories with profunctors as edges.
@@ -72,8 +68,7 @@ instance : CoeSort ProfQuiv.{v, u} (Type u) where
 attribute [instance] ProfQuiv.str
 
 /-- The quiver structure on `ProfQuiv`: an edge from `C` to `D` is a profunctor
-`Profunctor D C` (covariant in `D`, contravariant in `C`), representing a profunctor
-from `C` to `D`. -/
+`Profunctor C D`, covariant in `C` and contravariant in `D`. -/
 instance : Quiver ProfQuiv.{v, u} where
   Hom C D := Profunctor.{v} C D
 
@@ -81,85 +76,84 @@ instance : Quiver ProfQuiv.{v, u} where
 
 /-- The product of profunctor values along a path of profunctors.
 
-For the empty path (`.nil : Path C C`), `PathProd .nil d c = ULift (c ⟶ d)`, recording
-a morphism from `c` to `d` in the category `C`.
+For the empty path (`.nil : Path C C`), `PathProd .nil c d = ULift (d ⟶ c)`, recording
+a morphism from `d` to `c` in the category `C`.
 
-For a path `.cons p H` ending with profunctor `H : Profunctor D E` (edge from `E` to `D`),
-`PathProd (.cons p H) d c = Σ (e : E), PathProd p e c × H.obj e d`, quantifying over the
+For a path `.cons p H` ending with the profunctor `H : Profunctor E D` (an edge from `E` to
+`D`), `PathProd (.cons p H) c d = Σ (e : E), PathProd p c e × H.app e d`, quantifying over the
 intermediate object `e` where the sub-path `p` meets `H`. -/
 def PathProd {C D : ProfQuiv.{v, u}} :
-    Quiver.Path C D → D → C → Type (max u v)
-  | .nil, d, c => ULift.{u} (d ⟶ c)
-  | @Quiver.Path.cons _ _ _ E _ p H, d, c => Σ (e : E), H.app d e × PathProd p e c
+    Quiver.Path C D → C → D → Type (max u v)
+  | .nil, c, d => ULift.{u} (d ⟶ c)
+  | @Quiver.Path.cons _ _ _ E _ p H, c, d => Σ (e : E), PathProd p c e × H.app e d
 
 namespace PathProd
 
-/-- Left action on `PathProd`: precomposes a morphism on the source (left) boundary.
-Given `α : d' ⟶ d`, maps `PathProd p d c → PathProd p d' c`. This is contravariant:
-the morphism goes `d' → d` but the map goes from values at `d` to values at `d'`. -/
-def mapL {C D : ProfQuiv.{v, u}} {d d' : D} {c : C}
-    {p : Quiver.Path C D} (args : PathProd p d c) (α : d' ⟶ d) : PathProd p d' c :=
-  match D, p, d, d', args, α with
-  | _, .nil, _, _, ⟨f⟩, α => ⟨α ≫ f⟩
-  | _, @Quiver.Path.cons _ _ _ _ _ _ H, _, _, args, α =>
-    let ⟨e, h, inner⟩ := args
-    ⟨e, H.mapL α h, inner⟩
-
-/-- Right action on `PathProd`: postcomposes a morphism on the target (right) boundary.
-Given `α : c ⟶ c'`, maps `PathProd p d c → PathProd p d c'`. This is covariant. -/
-def mapR {C D : ProfQuiv.{v, u}} {d : D} {c c' : C}
-    {p : Quiver.Path C D} (args : PathProd p d c) (α : c ⟶ c') : PathProd p d c' :=
+/-- Covariant action on the start `c` of the path: given `α : c ⟶ c'`, maps
+`PathProd p c d → PathProd p c' d`. -/
+def mapL {C D : ProfQuiv.{v, u}} {c c' : C} {d : D}
+    {p : Quiver.Path C D} (args : PathProd p c d) (α : c ⟶ c') : PathProd p c' d :=
   match p, d, args with
   | .nil, _, ⟨f⟩ => ⟨f ≫ α⟩
   | Quiver.Path.cons _ _, _, args =>
-    let ⟨e, h, inner⟩ := args; ⟨e, h, inner.mapR α⟩
+    let ⟨e, inner, h⟩ := args; ⟨e, inner.mapL α, h⟩
+
+/-- Contravariant action on the end `d` of the path: given `α : d' ⟶ d`, maps
+`PathProd p c d → PathProd p c d'`. -/
+def mapR {C D : ProfQuiv.{v, u}} {c : C} {d d' : D}
+    {p : Quiver.Path C D} (args : PathProd p c d) (α : d' ⟶ d) : PathProd p c d' :=
+  match D, p, d, d', args, α with
+  | _, .nil, _, _, ⟨f⟩, α => ⟨α ≫ f⟩
+  | _, @Quiver.Path.cons _ _ _ _ _ _ H, _, _, args, α =>
+    let ⟨e, inner, h⟩ := args
+    ⟨e, inner, H.mapR α h⟩
 
 /-- `mapL` preserves identity morphisms. -/
 @[simp]
-theorem mapL_id {C D : ProfQuiv.{v, u}} {d : D} {c : C}
-    {p : Quiver.Path C D} (args : PathProd p d c) :
-    args.mapL (𝟙 d) = args := by
+theorem mapL_id {C D : ProfQuiv.{v, u}} {c : C} {d : D}
+    {p : Quiver.Path C D} (args : PathProd p c d) :
+    args.mapL (𝟙 c) = args := by
   induction p with
   | nil => match args with | ⟨f⟩ => simp [mapL]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapL, Profunctor.mapL]; rfl
+    | ⟨e, inner, h⟩ => simp [mapL, ih]; rfl
 
 /-- `mapR` preserves identity morphisms. -/
 @[simp]
-theorem mapR_id {C D : ProfQuiv.{v, u}} {d : D} {c : C}
-    {p : Quiver.Path C D} (args : PathProd p d c) :
-    args.mapR (𝟙 c) = args := by
+theorem mapR_id {C D : ProfQuiv.{v, u}} {c : C} {d : D}
+    {p : Quiver.Path C D} (args : PathProd p c d) :
+    args.mapR (𝟙 d) = args := by
   induction p with
   | nil => match args with | ⟨f⟩ => simp [mapR]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapR, ih]; rfl
+    | ⟨e, inner, h⟩ => simp [mapR, Profunctor.mapR]; rfl
 
 /-- `mapL` respects composition. -/
-theorem mapL_comp {C D : ProfQuiv.{v, u}} {d d' d'' : D} {c : C}
-    {p : Quiver.Path C D} (args : PathProd p d c) (f : d' ⟶ d) (g : d'' ⟶ d') :
-    args.mapL (g ≫ f) = (args.mapL f).mapL g := by
+theorem mapL_comp {C D : ProfQuiv.{v, u}} {c c' c'' : C} {d : D}
+    {p : Quiver.Path C D} (args : PathProd p c d) (f : c ⟶ c') (g : c' ⟶ c'') :
+    args.mapL (f ≫ g) = (args.mapL f).mapL g := by
   induction p with
   | nil => match args with | ⟨h⟩ => simp [mapL, Category.assoc]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapL, Profunctor.mapL_comp]; rfl
+    | ⟨e, inner, h⟩ => simp [mapL, ih]; rfl
 
 /-- `mapR` respects composition. -/
-theorem mapR_comp {C D : ProfQuiv.{v, u}} {d : D} {c c' c'' : C}
-    {p : Quiver.Path C D} (args : PathProd p d c) (f : c ⟶ c') (g : c' ⟶ c'') :
-    args.mapR (f ≫ g) = (args.mapR f).mapR g := by
+theorem mapR_comp {C D : ProfQuiv.{v, u}} {c : C} {d d' d'' : D}
+    {p : Quiver.Path C D} (args : PathProd p c d) (f : d' ⟶ d) (g : d'' ⟶ d') :
+    args.mapR (g ≫ f) = (args.mapR f).mapR g := by
   induction p with
   | nil => match args with | ⟨h⟩ => simp [mapR, Category.assoc]; rfl
   | cons p H ih =>
     match args with
-    | ⟨e, h, inner⟩ => simp [mapR, ih]; rfl
+    | ⟨e, inner, h⟩ => simp [mapR, Profunctor.mapR_comp]; rfl
 
 /-- `mapL` and `mapR` commute: they act on independent components of `PathProd`. -/
-theorem mapL_mapR_comm {C D : ProfQuiv.{v, u}} {d d' : D} {c c' : C}
-    {p : Quiver.Path C D} (args : PathProd p d c) (α : c ⟶ c') (β : d' ⟶ d) :
-    (args.mapL β).mapR α = (args.mapR α).mapL β := by
+theorem mapL_mapR_comm {C D : ProfQuiv.{v, u}} {c c' : C} {d d' : D}
+    {p : Quiver.Path C D} (args : PathProd p c d) (α : c ⟶ c') (β : d' ⟶ d) :
+    (args.mapR β).mapL α = (args.mapL α).mapR β := by
   induction p generalizing c c' with
   | nil =>
     match args with
@@ -168,57 +162,56 @@ theorem mapL_mapR_comm {C D : ProfQuiv.{v, u}} {d d' : D} {c c' : C}
     match args with
     | ⟨e, inner, h⟩ => rfl
 
-/-- The profunctor structure on `PathProd` along a path from `C` to `D`.
-This is a `Profunctor D C`, covariant in `D` (via `Profunctor.mapR`) and contravariant
-in `C` (via `Profunctor.mapL`). -/
-noncomputable def toProfunctor {C D : ProfQuiv.{v, u}}
+/-- The profunctor structure on `PathProd` along a path from `C` to `D`: a `Profunctor C D`,
+covariant in `C` (via `PathProd.mapL`) and contravariant in `D` (via `PathProd.mapR`). -/
+def toProfunctor {C D : ProfQuiv.{v, u}}
     (p : @Quiver.Path ProfQuiv _ C D) : Profunctor.{max u v} C D :=
   Profunctor.ofCore {
-    obj c d := PathProd p d c
-    map f g := TypeCat.ofHom fun args => (args.mapR f).mapL g
+    obj c d := PathProd p c d
+    map f g := TypeCat.ofHom fun args => (args.mapL f).mapR g
     map_id _ _ := by ext args; simp
-    map_comp f' f g g' := by
+    map_comp f f' g g' := by
       refine ConcreteCategory.hom_ext _ _ fun args => ?_
       simp only [types_comp_apply, TypeCat.ofHom_apply, mapL_comp, mapR_comp]
       congr 1
-      exact (mapL_mapR_comm (args.mapR f') f g').symm }
+      exact (mapL_mapR_comm (args.mapL f) f' g').symm }
 
 /-- `Profunctor.mapL` on `toProfunctor` agrees with `PathProd.mapL`. -/
 @[simp]
-theorem toProfunctor_mapL {C D : ProfQuiv.{v, u}} {d d' : D} {c : C}
-    {p : @Quiver.Path ProfQuiv _ C D} (f : d' ⟶ d) (args : PathProd p d c) :
+theorem toProfunctor_mapL {C D : ProfQuiv.{v, u}} {c c' : C} {d : D}
+    {p : @Quiver.Path ProfQuiv _ C D} (f : c ⟶ c') (args : PathProd p c d) :
     (toProfunctor p).mapL f args = args.mapL f := by
   simp [Profunctor.mapL, toProfunctor]; rfl
 
 /-- `Profunctor.mapR` on `toProfunctor` agrees with `PathProd.mapR`. -/
 @[simp]
-theorem toProfunctor_mapR {C D : ProfQuiv.{v, u}} {d : D} {c c' : C}
-    {p : @Quiver.Path ProfQuiv _ C D} (g : c ⟶ c') (args : PathProd p d c) :
+theorem toProfunctor_mapR {C D : ProfQuiv.{v, u}} {c : C} {d d' : D}
+    {p : @Quiver.Path ProfQuiv _ C D} (g : d' ⟶ d) (args : PathProd p c d) :
     (toProfunctor p).mapR g args = args.mapR g := by
   simp [Profunctor.mapR, toProfunctor]; rfl
 
 /-- Concatenation of path products: given path products for composable paths `p` and `q`,
 produce a path product for the composition `p.comp q`. -/
-noncomputable def comp {C E D : ProfQuiv.{v, u}} {d : D} {e₀ : E} {c : C}
+def comp {C E D : ProfQuiv.{v, u}} {c : C} {e₀ : E} {d : D}
     {p : Quiver.Path C E} {q : Quiver.Path E D}
-    (args_p : PathProd p e₀ c) (args_q : PathProd q d e₀) : PathProd (p.comp q) d c :=
+    (args_p : PathProd p c e₀) (args_q : PathProd q e₀ d) : PathProd (p.comp q) c d :=
   match D, q, d, args_q with
-  | _, .nil, _, ⟨f⟩ => (toProfunctor p).mapL f args_p
+  | _, .nil, _, ⟨f⟩ => args_p.mapR f
   | _, Quiver.Path.cons _ _, _, args_q =>
-    let ⟨f, h, inner_q⟩ := args_q; ⟨f, h, PathProd.comp args_p inner_q⟩
+    let ⟨f, inner_q, h⟩ := args_q; ⟨f, PathProd.comp args_p inner_q, h⟩
 
 /-- Split a path product for a composed path into path products for the two parts.
-Given `PathProd (p.comp q) d c`, produce an intermediate object `e₀ : E` together
-with `PathProd p e₀ c` and `PathProd q d e₀`. -/
-def split {C E D : ProfQuiv.{v, u}} {d : D} {c : C}
+Given `PathProd (p.comp q) c d`, produce an intermediate object `e₀ : E` together
+with `PathProd p c e₀` and `PathProd q e₀ d`. -/
+def split {C E D : ProfQuiv.{v, u}} {c : C} {d : D}
     {p : @Quiver.Path ProfQuiv _ C E} {q : @Quiver.Path ProfQuiv _ E D}
-    (args : PathProd (p.comp q) d c) : (e₀ : E) × PathProd p e₀ c × PathProd q d e₀ :=
+    (args : PathProd (p.comp q) c d) : (e₀ : E) × PathProd p c e₀ × PathProd q e₀ d :=
   match D, q, d, args with
   | _, .nil, d, args => ⟨d, args, ⟨𝟙 d⟩⟩
   | _, Quiver.Path.cons _ _, _, args =>
-    let ⟨f, h, inner⟩ := args
+    let ⟨f, inner, h⟩ := args
     let ⟨e₀, p_part, q_part⟩ := PathProd.split inner
-    ⟨e₀, p_part, ⟨f, h, q_part⟩⟩
+    ⟨e₀, p_part, ⟨f, q_part, h⟩⟩
 
 end PathProd
 
@@ -227,112 +220,95 @@ end PathProd
 /-- The wedge relation on `PathProd` identifies two tuples if they can be related
 by sliding a morphism across an internal junction.
 
-* `junction`: At the junction between sub-path `p` and edge `H`, for any `α : e ⟶ e'`,
+* `junction`: At the junction between sub-path `p` and edge `H`, for any `α : e' ⟶ e`,
   identifies `⟨e', inner.mapR α, h⟩` with `⟨e, inner, H.mapL α h⟩`.
-  This captures the fact that acting on the right boundary of the sub-path with `α`
-  is equivalent to acting on the left boundary of `H` with `α`.
+  This captures the fact that acting on the end of the sub-path with `α`
+  is equivalent to acting on the start of `H` with `α`.
 
 * `inner`: Propagates wedge relations from the sub-path through the outer structure,
-  keeping the outermost edge element fixed. -/
+  keeping the last edge element fixed. -/
 inductive WedgeRel {C : ProfQuiv.{v, u}} :
-    {D : ProfQuiv.{v, u}} → {p : @Quiver.Path ProfQuiv _ C D} → {d : D} → {c : C} →
-    PathProd p d c → PathProd p d c → Prop where
+    {D : ProfQuiv.{v, u}} → {p : @Quiver.Path ProfQuiv _ C D} → {c : C} → {d : D} →
+    PathProd p c d → PathProd p c d → Prop where
   | junction {D E : ProfQuiv.{v, u}} {p : @Quiver.Path ProfQuiv _ C E}
-      {H : E ⟶ D} {d : D} {c : C} {e e' : E}
-      (α : e' ⟶ e) (inner : PathProd p e c) (h : H.app d e') :
-      @WedgeRel _ _ (.cons p H) d c
-        ⟨e', h, (PathProd.toProfunctor p).mapL α inner⟩
-        ⟨e, H.mapR α h, inner⟩
+      {H : E ⟶ D} {c : C} {d : D} {e e' : E}
+      (α : e' ⟶ e) (inner : PathProd p c e) (h : H.app e' d) :
+      @WedgeRel _ _ (.cons p H) c d ⟨e', inner.mapR α, h⟩ ⟨e, inner, H.mapL α h⟩
   | inner {D E : ProfQuiv.{v, u}} {p : @Quiver.Path ProfQuiv _ C E}
-      {H : E ⟶ D} {d : D} {c : C} {e : E}
-      (h : H.app d e) {x y : PathProd p e c} :
-      @WedgeRel C E p e c x y →
-        @WedgeRel C D (.cons p H) d c ⟨e, h, x⟩ ⟨e, h, y⟩
+      {H : E ⟶ D} {c : C} {d : D} {e : E}
+      (h : H.app e d) {x y : PathProd p c e} :
+      @WedgeRel C E p c e x y →
+        @WedgeRel C D (.cons p H) c d ⟨e, x, h⟩ ⟨e, y, h⟩
 
 /-- The setoid on `PathProd` generated by the equivalence closure of the wedge relation.
 Two path product elements are equivalent if they can be connected by a sequence of
 wedge slides at internal junctions. -/
 instance PathProd.setoid {C D : ProfQuiv.{v, u}} (p : @Quiver.Path ProfQuiv _ C D)
-    (d : D) (c : C) : Setoid (PathProd p d c) where
-  r := Relation.EqvGen (@WedgeRel C D p d c)
+    (c : C) (d : D) : Setoid (PathProd p c d) where
+  r := Relation.EqvGen (@WedgeRel C D p c d)
   iseqv := Relation.EqvGen.is_equivalence _
 
 /-! ## Preservation of wedge relation -/
 
-/-- `Profunctor.mapR` on `toProfunctor` preserves the wedge relation. -/
-theorem PathProd.mapR_preserves_wedgeRel {C D : ProfQuiv.{v, u}}
-    {p : @Quiver.Path ProfQuiv _ C D} {d : D} {c c' : C} (α : c ⟶ c')
-    {x y : PathProd p d c} (h : @WedgeRel C D p d c x y) :
-    @WedgeRel C D p d c'
-      ((PathProd.toProfunctor p).mapR α x)
-      ((PathProd.toProfunctor p).mapR α y) := by
-  simp only [PathProd.toProfunctor_mapR]
+/-- `PathProd.mapL` preserves the wedge relation. -/
+theorem PathProd.mapL_preserves_wedgeRel {C D : ProfQuiv.{v, u}}
+    {p : @Quiver.Path ProfQuiv _ C D} {c c' : C} {d : D} (α : c ⟶ c')
+    {x y : PathProd p c d} (h : @WedgeRel C D p c d x y) :
+    @WedgeRel C D p c' d (x.mapL α) (y.mapL α) := by
   induction h with
   | junction β inner hval =>
-    simp only [PathProd.mapR]
-    have key : PathProd.mapR ((PathProd.toProfunctor _).mapL β inner) α =
-        (PathProd.toProfunctor _).mapL β (inner.mapR α) := by
-      simp [PathProd.toProfunctor_mapL, PathProd.mapL_mapR_comm]
-    rw [key]
-    exact WedgeRel.junction β (inner.mapR α) hval
+    simp only [PathProd.mapL]
+    rw [PathProd.mapL_mapR_comm]
+    exact WedgeRel.junction β (inner.mapL α) hval
   | inner hval _ ih =>
-    simp only [PathProd.mapR]
+    simp only [PathProd.mapL]
     exact WedgeRel.inner hval (ih α)
 
-/-- `Profunctor.mapL` on `toProfunctor` preserves the wedge relation. -/
-theorem PathProd.mapL_preserves_wedgeRel {C D : ProfQuiv.{v, u}}
-    {p : @Quiver.Path ProfQuiv _ C D} {d d' : D} {c : C} (α : d' ⟶ d)
-    {x y : PathProd p d c} (h : @WedgeRel C D p d c x y) :
-    @WedgeRel C D p d' c
-      ((PathProd.toProfunctor p).mapL α x)
-      ((PathProd.toProfunctor p).mapL α y) := by
-  simp only [PathProd.toProfunctor_mapL]
+/-- `PathProd.mapR` preserves the wedge relation. -/
+theorem PathProd.mapR_preserves_wedgeRel {C D : ProfQuiv.{v, u}}
+    {p : @Quiver.Path ProfQuiv _ C D} {c : C} {d d' : D} (α : d' ⟶ d)
+    {x y : PathProd p c d} (h : @WedgeRel C D p c d x y) :
+    @WedgeRel C D p c d' (x.mapR α) (y.mapR α) := by
   induction h with
   | junction β inner hval =>
-    simp only [PathProd.mapL]
-    have key : Profunctor.mapL _ α (Profunctor.mapR _ β hval) =
-        Profunctor.mapR _ β (Profunctor.mapL _ α hval) :=
-      Profunctor.mapL_mapR_comm _ α β hval
-    rw [key]
-    exact WedgeRel.junction β inner (Profunctor.mapL _ α hval)
+    simp only [PathProd.mapR]
+    rw [← Profunctor.mapL_mapR_comm]
+    exact WedgeRel.junction β inner (Profunctor.mapR _ α hval)
   | inner hval rel _ =>
-    simp only [PathProd.mapL]
-    exact WedgeRel.inner (Profunctor.mapL _ α hval) rel
+    simp only [PathProd.mapR]
+    exact WedgeRel.inner (Profunctor.mapR _ α hval) rel
 
 /-! ## Functor tensor product -/
 
 /-- The functor tensor product along a path of profunctors.
 This is the quotient of `PathProd` by the equivalence relation generated by the wedge
-conditions. Elements of `TensorProd p d c` represent equivalence classes of tuples
+conditions. Elements of `TensorProd p c d` represent equivalence classes of tuples
 of profunctor elements along the path `p`, where adjacent profunctors are identified
 via their shared boundary. -/
 def TensorProd {C D : ProfQuiv.{v, u}} (p : @Quiver.Path ProfQuiv _ C D)
-    (d : D) (c : C) : Type (max u v) :=
-  _root_.Quotient (PathProd.setoid p d c)
+    (c : C) (d : D) : Type (max u v) :=
+  _root_.Quotient (PathProd.setoid p c d)
 
 /-- The canonical map from `PathProd` to `TensorProd`. -/
 def TensorProd.mk {C D : ProfQuiv.{v, u}} {p : @Quiver.Path ProfQuiv _ C D}
-    {d : D} {c : C} (args : PathProd p d c) : TensorProd p d c :=
+    {c : C} {d : D} (args : PathProd p c d) : TensorProd p c d :=
   _root_.Quotient.mk _ args
 
 /-- The profunctor structure on the functor tensor product, inherited from `PathProd`.
-This is well-defined because `Profunctor.mapL` and `Profunctor.mapR` on `PathProd`
-preserve the wedge relation. -/
-noncomputable def TensorProd.toProfunctor {C D : ProfQuiv.{v, u}}
+This is well-defined because `PathProd.mapL` and `PathProd.mapR` preserve the wedge relation. -/
+def TensorProd.toProfunctor {C D : ProfQuiv.{v, u}}
     (p : @Quiver.Path ProfQuiv _ C D) : Profunctor.{max u v} C D :=
   Profunctor.ofCore {
-  obj c d := TensorProd p d c
+  obj c d := TensorProd p c d
   map f g := TypeCat.ofHom fun q => _root_.Quotient.lift
-    (fun args => _root_.Quotient.mk _ ((args.mapR f).mapL g))
+    (fun args => _root_.Quotient.mk _ ((args.mapL f).mapR g))
     (by
       intro a b hab
       apply _root_.Quotient.sound
       induction hab with
       | rel _ _ hr =>
-        apply Relation.EqvGen.rel
-        rw [← PathProd.toProfunctor_mapL, ← PathProd.toProfunctor_mapL,
-            ← PathProd.toProfunctor_mapR, ← PathProd.toProfunctor_mapR]
-        exact PathProd.mapL_preserves_wedgeRel g (PathProd.mapR_preserves_wedgeRel f hr)
+        exact Relation.EqvGen.rel _ _
+          (PathProd.mapR_preserves_wedgeRel g (PathProd.mapL_preserves_wedgeRel f hr))
       | refl _ => exact Relation.EqvGen.refl _
       | symm _ _ _ ih => exact Relation.EqvGen.symm _ _ ih
       | trans _ _ _ _ _ ih1 ih2 => exact Relation.EqvGen.trans _ _ _ ih1 ih2)

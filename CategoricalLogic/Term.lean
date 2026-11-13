@@ -49,11 +49,11 @@ def Profunctor.ofMat {X Y} (S : X → Y → Type u) :
       ext
       rfl }
 
-inductive Preterm {X : Cat} (S : Profunctor X (T.obj X)) : T.obj X → X → Type u where
-| base : {a : T.obj X} → {b : X} → S.app a b → Preterm S a b
-| cons : {a : T.obj X} → {b : X} → {c : (T.obj (T.obj X))} → {d : T.obj X} →
-  (a ⟶ (((T.μ).app X).toFunctor.obj c)) → (mapProf S).app c d →
-    Preterm S d b → Preterm S a b
+inductive Preterm {X : Cat} (S : Profunctor X (T.obj X)) : X → T.obj X → Type u where
+| base : {b : X} → {a : T.obj X} → S.app b a → Preterm S b a
+| cons : {b : X} → {a : T.obj X} → {c : (T.obj (T.obj X))} → {d : T.obj X} →
+  (a ⟶ (((T.μ).app X).toFunctor.obj c)) → (mapProf S).app d c →
+    Preterm S b d → Preterm S b a
 
 
 def ring : T.obj (Cat.of (Discrete _root_.Unit)) → _root_.Unit → Type u :=
