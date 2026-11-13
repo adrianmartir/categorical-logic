@@ -52,7 +52,7 @@ def Profunctor.ofMat {X Y} (S : X → Y → Type u) :
 inductive Preterm {X : Cat} (S : Profunctor X (T.obj X)) : T.obj X → X → Type u where
 | base : {a : T.obj X} → {b : X} → S.app a b → Preterm S a b
 | cons : {a : T.obj X} → {b : X} → {c : (T.obj (T.obj X))} → {d : T.obj X} →
-  (a ⟶ (((T.μ).app X).toFunctor.obj c)) → (mapProf.obj S).app c d →
+  (a ⟶ (((T.μ).app X).toFunctor.obj c)) → (mapProf S).app c d →
     Preterm S d b → Preterm S a b
 
 

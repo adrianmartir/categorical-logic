@@ -6,10 +6,17 @@ Authors: Adrian Marti, Aristotle
 
 module
 
-public import Mathlib
+public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.CategoryTheory.Profunctor.Basic
 
-/-! Compatibility notation for the elementwise use of the profunctor API. -/
+/-!
+# Elementwise notation for profunctors
+
+For a profunctor `H : Profunctor C D` (that is, `C ⥤ Dᵒᵖ ⥤ Type w`) we write `H.app X Y`
+for the value at `X : D` (the contravariant side, written first) and `Y : C` (the covariant side).
+`mapL` is the contravariant action in `X` and `mapR` the covariant action in `Y`.
+`mpLeft` and `mpRight` transport elements along equalities of objects.
+-/
 
 @[expose] public section
 
@@ -19,7 +26,7 @@ universe w
 
 variable {C : Type*} [Category* C] {D : Type*} [Category* D]
 
-/-- Evaluate a profunctor at a pair of objects, with the target object first. -/
+/-- Evaluate a profunctor at a pair of objects, with the contravariant object first. -/
 abbrev app (H : Profunctor.{w} C D) (X : D) (Y : C) := (H.obj Y).obj (.op X)
 
 /-- Contravariant action in the target object. -/
@@ -47,8 +54,8 @@ theorem mapR_comp (H : Profunctor.{w} C D) {X : D} {Y Y' Y'' : C}
 
 theorem mapL_mapR_comm (H : Profunctor.{w} C D) {X X' : D} {Y Y' : C}
     (f : X ⟶ X') (g : Y ⟶ Y') (e : H.app X' Y) :
-    H.mapL f (H.mapR g e) = H.mapR g (H.mapL f e) := by
-  exact (ConcreteCategory.congr_hom ((H.map g).naturality f.op) e).symm
+    H.mapL f (H.mapR g e) = H.mapR g (H.mapL f e) :=
+  (ConcreteCategory.congr_hom ((H.map g).naturality f.op) e).symm
 
 /-- Transport an element along an equality on the covariant side. -/
 def mpRight (H : Profunctor.{w} C D) {X : D} {Y Y' : C}
@@ -58,38 +65,35 @@ def mpRight (H : Profunctor.{w} C D) {X : D} {Y Y' : C}
 def mpLeft (H : Profunctor.{w} C D) {X X' : D} {Y : C}
     (h : X = X') (e : H.app X' Y) : H.app X Y := H.mapL (eqToHom h) e
 
-/-- Restrict the contravariant side of a profunctor along a functor. -/
-def actLeft {C D E : Type*} [Category* C] [Category* D] [Category* E]
-    (F : E ⥤ D) (H : Profunctor.{w} C D) : Profunctor.{w} C E :=
-  H.whiskerLeft₂ (𝟭 C) F
+@[simp] theorem mpRight_rfl (H : Profunctor.{w} C D) {X : D} {Y : C} (e : H.app X Y) :
+    H.mpRight e rfl = e := by simp [mpRight]
 
-/-- Restrict the covariant side of a profunctor along a functor. -/
-def actRight {C D E : Type*} [Category* C] [Category* D] [Category* E]
-    (H : Profunctor.{w} C D) (F : E ⥤ C) : Profunctor.{w} E D :=
-  H.whiskerLeft₂ F (𝟭 D)
+@[simp] theorem mpLeft_rfl (H : Profunctor.{w} C D) {X : D} {Y : C} (e : H.app X Y) :
+    H.mpLeft rfl e = e := by simp [mpLeft]
 
-@[simp] theorem actLeft_app {C D E : Type*} [Category* C] [Category* D] [Category* E]
-    (F : E ⥤ D) (H : Profunctor.{w} C D)
-    (X : E) (Y : C) : (H.actLeft F).app X Y = H.app (F.obj X) Y := rfl
+@[simp] theorem mpRight_mpRight (H : Profunctor.{w} C D) {X : D} {Y Y' Y'' : C}
+    (e : H.app X Y) (h : Y = Y') (h' : Y' = Y'') :
+    H.mpRight (H.mpRight e h) h' = H.mpRight e (h.trans h') := by
+  subst h h'; simp
 
-@[simp] theorem actRight_app {C D E : Type*} [Category* C] [Category* D] [Category* E]
-    (H : Profunctor.{w} C D) (F : E ⥤ C)
-    (X : D) (Y : E) : (H.actRight F).app X Y = H.app X (F.obj Y) := rfl
+@[simp] theorem mpLeft_mpLeft (H : Profunctor.{w} C D) {X X' X'' : D} {Y : C}
+    (h : X = X') (h' : X' = X'') (e : H.app X'' Y) :
+    H.mpLeft h (H.mpLeft h' e) = H.mpLeft (h.trans h') e := by
+  subst h h'; simp
 
-/-- Apply a natural transformation between profunctors at a pair of objects. -/
-abbrev homApp {H K : Profunctor.{w} C D} (α : H ⟶ K) (X : D) (Y : C) :
-    H.app X Y → K.app X Y := (α.app Y).app (.op X)
+theorem mpLeft_mpRight (H : Profunctor.{w} C D) {X X' : D} {Y Y' : C}
+    (h : X = X') (e : H.app X' Y) (h' : Y = Y') :
+    H.mpLeft h (H.mpRight e h') = H.mpRight (H.mpLeft h e) h' :=
+  H.mapL_mapR_comm _ _ e
 
-/-- Apply a transformation whose codomain is restricted on the contravariant side. -/
-abbrev homAppL {C C' D : Type*} [Category* C] [Category* C'] [Category* D]
-    {F : C ⥤ C'} {H : Profunctor.{w} D C}
-    {K : Profunctor.{w} D C'} (α : H ⟶ K.actLeft F) (X : C) (Y : D) :
-    H.app X Y → K.app (F.obj X) Y := (α.app Y).app (.op X)
+theorem mpLeft_mapR (H : Profunctor.{w} C D) {X X' : D} {Y Y' : C}
+    (h : X = X') (g : Y ⟶ Y') (e : H.app X' Y) :
+    H.mpLeft h (H.mapR g e) = H.mapR g (H.mpLeft h e) :=
+  H.mapL_mapR_comm _ g e
 
-/-- Apply a transformation whose codomain is restricted on the covariant side. -/
-abbrev homAppR {C D D' : Type*} [Category* C] [Category* D] [Category* D']
-    {H : Profunctor.{w} D C}
-    {K : Profunctor.{w} D' C} {F : D ⥤ D'} (α : H ⟶ K.actRight F) (X : C) (Y : D) :
-    H.app X Y → K.app X (F.obj Y) := (α.app Y).app (.op X)
+theorem mpRight_mapL (H : Profunctor.{w} C D) {X X' : D} {Y Y' : C}
+    (f : X ⟶ X') (e : H.app X' Y) (h : Y = Y') :
+    H.mpRight (H.mapL f e) h = H.mapL f (H.mpRight e h) :=
+  (H.mapL_mapR_comm f _ e).symm
 
 end CategoryTheory.Profunctor
