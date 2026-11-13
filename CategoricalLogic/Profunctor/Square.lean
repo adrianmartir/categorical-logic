@@ -7,6 +7,7 @@ Authors: Adrian Marti
 module
 
 public import CategoricalLogic.Profunctor.Basic
+public import Mathlib.CategoryTheory.Profunctor.Comp
 
 /-!
 # Cells between profunctors
@@ -33,15 +34,17 @@ Cells are given elementwise, as bespoke structures.
 * `Square.cast`, `NullaryCell.cast`, `BinaryCell.cast`: transport along equalities of the
   boundary functors.
 * `Square.homEquiv`: squares correspond to natural transformations `P ⟶ Q.whiskerLeft₂ F G`.
+* `BinaryCell.homEquiv`: binary cells `h, k ⇒ j` correspond to natural transformations
+  `k.comp h ⟶ j.whiskerLeft₂ F G` out of mathlib's composite profunctor.
 -/
 
 @[expose] public section
 
 namespace CategoryTheory.Profunctor
 
-universe w w' w'' w''' w₁ w₂
+universe u w w' w'' w''' w₁ w₂
 
-open Opposite
+open Opposite Limits
 
 section Square
 
@@ -308,6 +311,75 @@ theorem cast_app {F' : Z ⥤ Z'} {G' : X ⥤ X'} (hF : F = F') (hG : G = G')
   subst hF hG hF' hG'; simp
 
 end BinaryCell
+
+end BinaryCell
+
+section Comp
+
+/-! ### Binary cells and composition of profunctors -/
+
+variable {X Z : Type*} {Y : Type u} [Category* X] [Category* Y] [Category* Z]
+  (h : Profunctor.{max u w} Y X) (k : Profunctor.{max u w} Z Y)
+
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
+/-- The covariant action of a composite profunctor on a representative of the coend. -/
+@[simp]
+lemma comp_map_app_mk {z z' : Z} (α : z ⟶ z') (x : Xᵒᵖ) (y : Y) (g : k.app y z)
+    (f : h.app x.unop y) :
+    ((k.comp h).map α).app x (Quot.mk _ ⟨y, g, f⟩) = Quot.mk _ ⟨y, k.mapR α g, f⟩ := by
+  simp [chosenCoend.map_apply, Types.chosenCoend_def, mapR]
+
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
+/-- The contravariant action of a composite profunctor on a representative of the coend. -/
+@[simp]
+lemma comp_obj_map_mk (z : Z) {x x' : Xᵒᵖ} (α : x ⟶ x') (y : Y) (g : k.app y z)
+    (f : h.app x.unop y) :
+    ((k.comp h).obj z).map α (Quot.mk _ ⟨y, g, f⟩) = Quot.mk _ ⟨y, g, h.mapL α.unop f⟩ := by
+  simp [chosenCoend.map_apply, Types.chosenCoend_def, mapL]
+
+end Comp
+
+namespace BinaryCell
+
+variable {X Z X' Z' : Type*} {Y : Type u}
+  [Category* X] [Category* Y] [Category* Z] [Category* X'] [Category* Z']
+  {h : Profunctor.{max u w} Y X} {k : Profunctor.{max u w} Z Y}
+  {j : Profunctor.{max u w} Z' X'} {F : Z ⥤ Z'} {G : X ⥤ X'}
+
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
+attribute [local simp] Types.chosenCoend_def chosenCoend.map_apply in
+/-- Binary cells `h, k ⇒ j` with boundary `F, G` are natural transformations out of the
+composite profunctor, `k.comp h ⟶ j.whiskerLeft₂ F G`. Note that mathlib composes profunctors
+in the opposite order to the one in which `BinaryCell` lists its source. -/
+def homEquiv : BinaryCell h k j F G ≃ (k.comp h ⟶ j.whiskerLeft₂ F G) where
+  toFun β :=
+    { app z :=
+        { app x := TypeCat.ofHom <| Quot.lift (fun ⟨_, g, f⟩ ↦ β.app f g) <| by
+            rintro _ _ ⟨α, g, f⟩
+            exact (β.wedge f α g).symm
+          naturality _ _ α := by
+            ext ⟨_, g, f⟩
+            simpa [mapL] using β.natL α.unop f g }
+      naturality _ _ α := by
+        ext x ⟨_, g, f⟩
+        simpa [mapR] using β.natR f g α }
+  invFun α :=
+    { app {x y z} f g := (α.app z).app (op x) (Quot.mk _ ⟨y, g, f⟩)
+      wedge {x _ _ z} f β g := congrArg ((α.app z).app (op x))
+        (Quot.sound (Types.coendRel.mk (F := k.compDiagram h z x) β (g, f))).symm
+      natL {_ x' y z} β f g :=
+        (congrArg ((α.app z).app (op x')) (comp_obj_map_mk h k z β.op y g f).symm).trans
+          (ConcreteCategory.congr_hom ((α.app z).naturality β.op) (Quot.mk _ ⟨y, g, f⟩))
+      natR {x y _ z'} f g β :=
+        (congrArg ((α.app z').app (op x)) (comp_map_app_mk h k β (op x) y g f).symm).trans
+          (ConcreteCategory.congr_hom (NatTrans.congr_app (α.naturality β) (op x))
+            (Quot.mk _ ⟨y, g, f⟩)) }
+  left_inv _ := rfl
+  right_inv α := NatTrans.ext <| funext fun _ => NatTrans.ext <| funext fun _ =>
+    TypeCat.Hom.ext <| TypeCat.Fun.ext <| funext fun q => Quot.inductionOn q fun _ => rfl
 
 end BinaryCell
 
