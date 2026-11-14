@@ -21,6 +21,8 @@ squares out of mathlib's composites. The laws are stated elementwise, on represe
 
 * `Operad M X`, with the derived `Operad.unit a` (the identity operation on `a`) and
   `Operad.mul g f` (the composite of `g` with the family `f`).
+* `Operad.ofCells`: an operad from a nullary and a binary cell, with the laws stated on
+  elements and without quotients.
 * `Operad.Hom`, `Operad.Hom.id`, `Operad.Hom.comp`, and the category of `T`-operads.
 -/
 
@@ -49,21 +51,42 @@ structure Operad (X : Type u) [SmallCategory X] where
       hom.mpRight f (Functor.congr_obj (M.left_unit X) b)
   /-- An operation `f` composed with the family of identities is `f`. -/
   comp_ident {a : X} {b : T X} (f : hom.app a b) :
-    comp.app (compMk f ((M.mapProf hom).mpLeft (Functor.congr_obj (M.map_id X) b)
-        ((M.mapSquare ident).app ((M.unit X).app (𝟙 b))))) =
+    comp.app (compMk f ((M.mapCov ident).app ((M.unit X).app (𝟙 b)))) =
       hom.mpRight f (Functor.congr_obj (M.right_unit X) b)
   /-- Composition is associative. -/
   comp_assoc {a : X} {b : T X} {c : T (T X)} {d : T (T (T X))} (h : hom.app a b)
       (g : (M.mapProf hom).app b c) (f : (M.mapProf (M.mapProf hom)).app c d) :
     comp.app (compMk (comp.app (compMk h g)) ((M.μCell hom).app f)) =
-      hom.mpRight (comp.app (compMk h ((M.mapProf hom).mpLeft
-          (Functor.congr_obj (M.map_id X) b)
-          ((M.mapSquare comp).app ((M.lax hom (M.mapProf hom)).app (compMk g f))))))
+      hom.mpRight (comp.app (compMk h
+          ((M.mapCov comp).app ((M.lax hom (M.mapProf hom)).app (compMk g f)))))
         (Functor.congr_obj (M.assoc X) d).symm
 
 namespace Operad
 
 variable {M} {X Y Z : Type u} [SmallCategory X] [SmallCategory Y] [SmallCategory Z]
+
+/-- A `T`-operad from elementwise cells: a nullary cell of identities and a binary cell of
+composition, with the three laws stated on elements. -/
+def ofCells (hom : Profunctor.{u} X (T X)) (id : NullaryCell hom (𝟭 X) (M.η X))
+    (comp : BinaryCell hom (M.mapProf hom) hom (𝟭 X) (M.μ X))
+    (ident_comp : ∀ {a : X} {b : T X} (f : hom.app a b),
+      comp.app (id.app a) ((M.ηCell hom).app f) =
+        hom.mpRight f (Functor.congr_obj (M.left_unit X) b))
+    (comp_ident : ∀ {a : X} {b : T X} (f : hom.app a b),
+      comp.app f ((M.mapNullary id).app b) =
+        hom.mpRight f (Functor.congr_obj (M.right_unit X) b))
+    (comp_assoc : ∀ {a : X} {b : T X} {c : T (T X)} {d : T (T (T X))} (h : hom.app a b)
+      (g : (M.mapProf hom).app b c) (f : (M.mapProf (M.mapProf hom)).app c d),
+      comp.app (comp.app h g) ((M.μCell hom).app f) =
+        hom.mpRight (comp.app h ((M.mapBinary comp).app g f))
+          (Functor.congr_obj (M.assoc X) d).symm) :
+    Operad M X where
+  hom := hom
+  ident := Square.ofNullary id
+  comp := Square.ofBinary comp
+  ident_comp f := by simpa using ident_comp f
+  comp_ident f := comp_ident f
+  comp_assoc h g f := comp_assoc h g f
 
 /-- The composite of an operation `g` with a family `f` of operations. -/
 abbrev mul (O : Operad M X) {a : X} {b : T X} {c : T (T X)} (g : O.hom.app a b)
