@@ -6,328 +6,178 @@ Authors: Adrian Marti
 
 module
 
-public import Mathlib.CategoryTheory.Monad.Basic
-public import Mathlib.CategoryTheory.Category.Cat
-public import CategoricalLogic.Profunctor.Square
+public import CategoricalLogic.LaxMonad
 
 /-!
-# Generalized operads in profunctors
+# Generalized operads for a lax monad on profunctors
 
-A formalization of generalized multicategories (`T`-operads, the `T`-monoids of
-Cruttwell–Shulman) in the virtual double category of categories, functors and profunctors.
-We avoid the bicategory of profunctors and work with the cells of arity `0`, `1` and `2` of
-`CategoricalLogic.Profunctor.Square`. This avoids the complexities of profunctor composition and
-gives a computational interpretation of operads.
+A `T`-operad (a `T`-monoid of Cruttwell–Shulman, i.e. a monad in the horizontal Kleisli
+bicategory of `T`) on a small category `X` is a profunctor `hom : X ⇸ T X` with an identity
+`Square Profunctor.id hom 𝟭 η` and a composition `Square (hom.comp (T hom)) hom 𝟭 μ`, both
+squares out of mathlib's composites. The laws are stated elementwise, on representatives
+`compMk g f` of the composite.
 
 ## Main definitions
 
-* `FunctorProf T`: a functor `T : Cat ⥤ Cat` acting on profunctors and on cells of arity `≤ 2`.
-* `MonadProf T`: a monad on `Cat` whose unit and multiplication have cell components.
-* `Operad T X`: a `T`-operad on the category `X`.
-* `Operad.Hom M N`: morphisms of `T`-operads, with identities and composition.
-
-## Conventions
-
-Since cells are indexed by functors while `T` acts on morphisms of `Cat`, the action of `T` on
-cells takes the boundary morphisms explicitly. Where the boundaries of two cells agree only
-propositionally, we transport with `cast` on cells and with `mpLeft`/`mpRight` on elements.
-
-References:
-* [A unified framework for generalized multicategories](https://arxiv.org/abs/0907.2460)
+* `Operad M X`, with the derived `Operad.unit a` (the identity operation on `a`) and
+  `Operad.mul g f` (the composite of `g` with the family `f`).
+* `Operad.Hom`, `Operad.Hom.id`, `Operad.Hom.comp`, and the category of `T`-operads.
 -/
 
 @[expose] public section
 
-namespace CategoryTheory
+namespace CategoryTheory.Lax
 
-universe u v u' v' w w'
+universe u
 
 open Profunctor
 
-/-! ### Functoriality and the monad laws as equalities of functors -/
+variable {T : Type u → Type u} [CatFamily T] (M : LaxMonad T)
 
-namespace Functor
-
-variable (T : Cat.{v, u} ⥤ Cat.{v', u'})
-
-theorem map_id_toFunctor (C : Cat.{v, u}) : (T.map (𝟙 C)).toFunctor = 𝟭 (T.obj C) :=
-  congrArg Cat.Hom.toFunctor (T.map_id C)
-
-theorem map_comp_toFunctor {C D E : Cat.{v, u}} (F : C ⟶ D) (G : D ⟶ E) :
-    (T.map (F ≫ G)).toFunctor = (T.map F).toFunctor ⋙ (T.map G).toFunctor :=
-  congrArg Cat.Hom.toFunctor (T.map_comp F G)
-
-end Functor
-
-namespace Monad
-
-variable (T : Monad Cat.{v, u})
-
-theorem η_naturality_toFunctor {C D : Cat.{v, u}} (F : C ⟶ D) :
-    F.toFunctor ⋙ (T.η.app D).toFunctor = (T.η.app C).toFunctor ⋙ (T.map F).toFunctor :=
-  congrArg Cat.Hom.toFunctor (T.η.naturality F)
-
-theorem μ_naturality_toFunctor {C D : Cat.{v, u}} (F : C ⟶ D) :
-    (T.map (T.map F)).toFunctor ⋙ (T.μ.app D).toFunctor =
-      (T.μ.app C).toFunctor ⋙ (T.map F).toFunctor :=
-  congrArg Cat.Hom.toFunctor (T.μ.naturality F)
-
-theorem left_unit_toFunctor (C : Cat.{v, u}) :
-    (T.η.app (T.obj C)).toFunctor ⋙ (T.μ.app C).toFunctor = 𝟭 (T.obj C) :=
-  congrArg Cat.Hom.toFunctor (T.left_unit C)
-
-theorem right_unit_toFunctor (C : Cat.{v, u}) :
-    (T.map (T.η.app C)).toFunctor ⋙ (T.μ.app C).toFunctor = 𝟭 (T.obj C) :=
-  congrArg Cat.Hom.toFunctor (T.right_unit C)
-
-theorem assoc_toFunctor (C : Cat.{v, u}) :
-    (T.map (T.μ.app C)).toFunctor ⋙ (T.μ.app C).toFunctor =
-      (T.μ.app (T.obj C)).toFunctor ⋙ (T.μ.app C).toFunctor :=
-  congrArg Cat.Hom.toFunctor (T.assoc C)
-
-end Monad
-
-/-! ### Functors and monads of profunctors -/
-
-/-- A functor `T : Cat ⥤ Cat` is a *functor of profunctors* if it acts on profunctors and on
-cells of arity `≤ 2`, compatibly with its action on functors and with the composition of cells.
-This is a functor of virtual double categories, truncated at the arities a `T`-operad can see. -/
-class FunctorProf (T : Cat.{v, u} ⥤ Cat.{v', u'}) where
-  /-- The action on profunctors. -/
-  mapProf {C D : Cat.{v, u}} : Profunctor.{w} C D → Profunctor.{w'} (T.obj C) (T.obj D)
-  /-- The action on squares. -/
-  mapSquare {C D C' D' : Cat.{v, u}} {P : Profunctor.{w} C D} {Q : Profunctor.{w} C' D'}
-    (F : C ⟶ C') (G : D ⟶ D') :
-    Square P Q F.toFunctor G.toFunctor →
-      Square (mapProf P) (mapProf Q) (T.map F).toFunctor (T.map G).toFunctor
-  /-- The action on nullary cells. -/
-  mapNullary {A C D : Cat.{v, u}} {Q : Profunctor.{w} C D} (F : A ⟶ C) (G : A ⟶ D) :
-    NullaryCell Q F.toFunctor G.toFunctor →
-      NullaryCell (mapProf Q) (T.map F).toFunctor (T.map G).toFunctor
-  /-- The action on binary cells. -/
-  mapBinary {X Y Z X' Z' : Cat.{v, u}} {P : Profunctor.{w} X Y} {Q : Profunctor.{w} Y Z}
-    {R : Profunctor.{w} X' Z'} (F : X ⟶ X') (G : Z ⟶ Z') :
-    BinaryCell P Q R F.toFunctor G.toFunctor →
-      BinaryCell (mapProf P) (mapProf Q) (mapProf R) (T.map F).toFunctor (T.map G).toFunctor
-  /-- `T` preserves identity squares. -/
-  mapSquare_id {C D : Cat.{v, u}} (P : Profunctor.{w} C D) :
-    mapSquare (𝟙 C) (𝟙 D) (Square.id P) =
-      (Square.id (mapProf P)).cast (T.map_id_toFunctor C).symm (T.map_id_toFunctor D).symm
-  /-- `T` preserves vertical composition of squares. -/
-  mapSquare_vComp {C D C' D' C'' D'' : Cat.{v, u}} {P : Profunctor.{w} C D}
-    {Q : Profunctor.{w} C' D'} {R : Profunctor.{w} C'' D''} {F : C ⟶ C'} {G : D ⟶ D'}
-    {F' : C' ⟶ C''} {G' : D' ⟶ D''}
-    (s : Square P Q F.toFunctor G.toFunctor) (t : Square Q R F'.toFunctor G'.toFunctor) :
-    mapSquare (F ≫ F') (G ≫ G') (s.vComp t) =
-      ((mapSquare F G s).vComp (mapSquare F' G' t)).cast
-        (T.map_comp_toFunctor F F').symm (T.map_comp_toFunctor G G').symm
-  /-- `T` preserves postcomposition of nullary cells with squares. -/
-  mapNullary_vComp {A C D C' D' : Cat.{v, u}} {Q : Profunctor.{w} C D}
-    {R : Profunctor.{w} C' D'} {F : A ⟶ C} {G : A ⟶ D} {F' : C ⟶ C'} {G' : D ⟶ D'}
-    (ν : NullaryCell Q F.toFunctor G.toFunctor) (t : Square Q R F'.toFunctor G'.toFunctor) :
-    mapNullary (F ≫ F') (G ≫ G') (ν.vComp t) =
-      ((mapNullary F G ν).vComp (mapSquare F' G' t)).cast
-        (T.map_comp_toFunctor F F').symm (T.map_comp_toFunctor G G').symm
-  /-- `T` preserves reindexing of nullary cells along functors. -/
-  mapNullary_comap {A B C D : Cat.{v, u}} {Q : Profunctor.{w} C D} {F : A ⟶ C} {G : A ⟶ D}
-    (K : B ⟶ A) (ν : NullaryCell Q F.toFunctor G.toFunctor) :
-    mapNullary (K ≫ F) (K ≫ G) (ν.comap K.toFunctor) =
-      ((mapNullary F G ν).comap (T.map K).toFunctor).cast
-        (T.map_comp_toFunctor K F).symm (T.map_comp_toFunctor K G).symm
-  /-- `T` preserves postcomposition of binary cells with squares. -/
-  mapBinary_vComp {X Y Z X' Z' X'' Z'' : Cat.{v, u}} {P : Profunctor.{w} X Y}
-    {Q : Profunctor.{w} Y Z} {R : Profunctor.{w} X' Z'} {R' : Profunctor.{w} X'' Z''}
-    {F : X ⟶ X'} {G : Z ⟶ Z'} {F' : X' ⟶ X''} {G' : Z' ⟶ Z''}
-    (β : BinaryCell P Q R F.toFunctor G.toFunctor) (t : Square R R' F'.toFunctor G'.toFunctor) :
-    mapBinary (F ≫ F') (G ≫ G') (β.vComp t) =
-      ((mapBinary F G β).vComp (mapSquare F' G' t)).cast
-        (T.map_comp_toFunctor F F').symm (T.map_comp_toFunctor G G').symm
-  /-- `T` preserves precomposition of binary cells with pairs of squares. -/
-  mapBinary_precomp {X Y Z X' Z' X₀ Y₀ Z₀ : Cat.{v, u}} {P : Profunctor.{w} X Y}
-    {Q : Profunctor.{w} Y Z} {R : Profunctor.{w} X' Z'} {P' : Profunctor.{w} X₀ Y₀}
-    {Q' : Profunctor.{w} Y₀ Z₀} {F : X ⟶ X'} {G : Z ⟶ Z'} {K : Y₀ ⟶ Y} {F₀ : X₀ ⟶ X}
-    {G₀ : Z₀ ⟶ Z} (s : Square P' P F₀.toFunctor K.toFunctor)
-    (s' : Square Q' Q K.toFunctor G₀.toFunctor) (β : BinaryCell P Q R F.toFunctor G.toFunctor) :
-    mapBinary (F₀ ≫ F) (G₀ ≫ G) (β.precomp s s') =
-      ((mapBinary F G β).precomp (mapSquare F₀ K s) (mapSquare K G₀ s')).cast
-        (T.map_comp_toFunctor F₀ F).symm (T.map_comp_toFunctor G₀ G).symm
-
-namespace FunctorProf
-
-variable {T : Cat.{v, u} ⥤ Cat.{v', u'}} [FunctorProf.{u, v, u', v', w, w'} T]
-
-/-- The action of `T` on a nullary cell whose source boundary is the identity. -/
-def mapNullaryId {C D : Cat.{v, u}} {Q : Profunctor.{w} C D} {G : C ⟶ D}
-    (ν : NullaryCell Q (𝟭 C) G.toFunctor) :
-    NullaryCell (mapProf Q) (𝟭 (T.obj C)) (T.map G).toFunctor :=
-  (mapNullary (𝟙 C) G ν).cast (T.map_id_toFunctor C) rfl
-
-/-- The action of `T` on a binary cell whose source boundary is the identity. -/
-def mapBinaryId {X Y Z Z' : Cat.{v, u}} {P : Profunctor.{w} X Y} {Q : Profunctor.{w} Y Z}
-    {R : Profunctor.{w} X Z'} {G : Z ⟶ Z'} (β : BinaryCell P Q R (𝟭 X) G.toFunctor) :
-    BinaryCell (mapProf P) (mapProf Q) (mapProf R) (𝟭 (T.obj X)) (T.map G).toFunctor :=
-  (mapBinary (𝟙 X) G β).cast (T.map_id_toFunctor X) rfl
-
-/-- The action of `T` on squares commutes with transport along equal boundaries. -/
-theorem mapSquare_cast {C D C' D' : Cat.{v, u}} {P : Profunctor.{w} C D}
-    {Q : Profunctor.{w} C' D'} {F F' : C ⟶ C'} {G G' : D ⟶ D'}
-    (hF : F.toFunctor = F'.toFunctor) (hG : G.toFunctor = G'.toFunctor)
-    (s : Square P Q F.toFunctor G.toFunctor) :
-    mapSquare (T := T) F' G' (s.cast hF hG) =
-      (mapSquare F G s).cast (congrArg (T.map · |>.toFunctor) (Cat.Hom.ext hF))
-        (congrArg (T.map · |>.toFunctor) (Cat.Hom.ext hG)) := by
-  obtain rfl := Cat.Hom.ext hF
-  obtain rfl := Cat.Hom.ext hG
-  simp
-
-end FunctorProf
-
-open FunctorProf
-
-/-- A monad `T` on `Cat` that is a functor of profunctors is a *monad of profunctors* if its unit
-and multiplication have cell components, natural with respect to cells of arity `≤ 2` and
-satisfying the monad laws on cells. -/
-class MonadProf (T : Monad Cat.{v, u}) extends FunctorProf.{u, v, u, v, w, w} T.toFunctor where
-  /-- The component of the unit at a profunctor. -/
-  ηCell {C D : Cat.{v, u}} (P : Profunctor.{w} C D) :
-    Square P (mapProf P) (T.η.app C).toFunctor (T.η.app D).toFunctor
-  /-- The component of the multiplication at a profunctor. -/
-  μCell {C D : Cat.{v, u}} (P : Profunctor.{w} C D) :
-    Square (mapProf (mapProf P)) (mapProf P) (T.μ.app C).toFunctor (T.μ.app D).toFunctor
-  /-- Naturality of `ηCell` with respect to squares. -/
-  ηCell_square {C D C' D' : Cat.{v, u}} {P : Profunctor.{w} C D} {Q : Profunctor.{w} C' D'}
-    {F : C ⟶ C'} {G : D ⟶ D'} (s : Square P Q F.toFunctor G.toFunctor) :
-    s.vComp (ηCell Q) = ((ηCell P).vComp (mapSquare F G s)).cast
-      (T.η_naturality_toFunctor F).symm (T.η_naturality_toFunctor G).symm
-  /-- Naturality of `ηCell` with respect to nullary cells. -/
-  ηCell_nullary {A C D : Cat.{v, u}} {Q : Profunctor.{w} C D} {F : A ⟶ C} {G : A ⟶ D}
-    (ν : NullaryCell Q F.toFunctor G.toFunctor) :
-    ν.vComp (ηCell Q) = ((mapNullary F G ν).comap (T.η.app A).toFunctor).cast
-      (T.η_naturality_toFunctor F).symm (T.η_naturality_toFunctor G).symm
-  /-- Naturality of `ηCell` with respect to binary cells. -/
-  ηCell_binary {X Y Z X' Z' : Cat.{v, u}} {P : Profunctor.{w} X Y} {Q : Profunctor.{w} Y Z}
-    {R : Profunctor.{w} X' Z'} {F : X ⟶ X'} {G : Z ⟶ Z'}
-    (β : BinaryCell P Q R F.toFunctor G.toFunctor) :
-    β.vComp (ηCell R) = ((mapBinary F G β).precomp (ηCell P) (ηCell Q)).cast
-      (T.η_naturality_toFunctor F).symm (T.η_naturality_toFunctor G).symm
-  /-- Naturality of `μCell` with respect to squares. -/
-  μCell_square {C D C' D' : Cat.{v, u}} {P : Profunctor.{w} C D} {Q : Profunctor.{w} C' D'}
-    {F : C ⟶ C'} {G : D ⟶ D'} (s : Square P Q F.toFunctor G.toFunctor) :
-    (mapSquare (T.map F) (T.map G) (mapSquare F G s)).vComp (μCell Q) =
-      ((μCell P).vComp (mapSquare F G s)).cast
-        (T.μ_naturality_toFunctor F).symm (T.μ_naturality_toFunctor G).symm
-  /-- Naturality of `μCell` with respect to nullary cells. -/
-  μCell_nullary {A C D : Cat.{v, u}} {Q : Profunctor.{w} C D} {F : A ⟶ C} {G : A ⟶ D}
-    (ν : NullaryCell Q F.toFunctor G.toFunctor) :
-    (mapNullary (T.map F) (T.map G) (mapNullary F G ν)).vComp (μCell Q) =
-      ((mapNullary F G ν).comap (T.μ.app A).toFunctor).cast
-        (T.μ_naturality_toFunctor F).symm (T.μ_naturality_toFunctor G).symm
-  /-- Naturality of `μCell` with respect to binary cells. -/
-  μCell_binary {X Y Z X' Z' : Cat.{v, u}} {P : Profunctor.{w} X Y} {Q : Profunctor.{w} Y Z}
-    {R : Profunctor.{w} X' Z'} {F : X ⟶ X'} {G : Z ⟶ Z'}
-    (β : BinaryCell P Q R F.toFunctor G.toFunctor) :
-    (mapBinary (T.map F) (T.map G) (mapBinary F G β)).vComp (μCell R) =
-      ((mapBinary F G β).precomp (μCell P) (μCell Q)).cast
-        (T.μ_naturality_toFunctor F).symm (T.μ_naturality_toFunctor G).symm
-  /-- The left unit law, on cells. -/
-  ηCell_μCell {C D : Cat.{v, u}} (P : Profunctor.{w} C D) :
-    (ηCell (mapProf P)).vComp (μCell P) =
-      (Square.id (mapProf P)).cast (T.left_unit_toFunctor C).symm (T.left_unit_toFunctor D).symm
-  /-- The right unit law, on cells. -/
-  mapSquare_ηCell_μCell {C D : Cat.{v, u}} (P : Profunctor.{w} C D) :
-    (mapSquare (T.η.app C) (T.η.app D) (ηCell P)).vComp (μCell P) =
-      (Square.id (mapProf P)).cast
-        (T.right_unit_toFunctor C).symm (T.right_unit_toFunctor D).symm
-  /-- The associativity law, on cells. -/
-  μCell_assoc {C D : Cat.{v, u}} (P : Profunctor.{w} C D) :
-    (μCell (mapProf P)).vComp (μCell P) =
-      ((mapSquare (T.μ.app C) (T.μ.app D) (μCell P)).vComp (μCell P)).cast
-        (T.assoc_toFunctor C) (T.assoc_toFunctor D)
-
-open MonadProf
-
-/-! ### Operads -/
-
-variable (T : Monad Cat.{v, u}) [MonadProf.{u, v, w} T]
-
-/-- A `T`-operad on `X` (a `T`-monoid in the sense of Cruttwell–Shulman): a profunctor
-`hom : X ⇸ T X`, whose elements `hom.app a b` are the operations with output `a : X` and arity
-`b : T X`, together with identities and a composition. -/
-structure Operad (X : Cat.{v, u}) where
-  /-- The operations: `hom.app a b` are the operations with output `a` and arity `b`. -/
-  hom : Profunctor.{w} X (T.obj X)
-  /-- The identity operation on `a`, of arity `η a`. -/
-  id : NullaryCell hom (𝟭 X) (T.η.app X).toFunctor
-  /-- Composition: an operation `g` of arity `b` and an arity-`c` family `f` of operations with
-  outputs `b` compose to an operation of arity `μ c`. -/
-  comp : BinaryCell hom (mapProf hom) hom (𝟭 X) (T.μ.app X).toFunctor
-  /-- Composing the identity with an operation `f`, viewed as a family of operations through
-  `η`, is `f`. -/
-  comp_id {a : X} {b : T.obj X} (f : hom.app a b) :
-    comp.app (id.app a) ((ηCell hom).app f) =
-      hom.mpRight f (Functor.congr_obj (T.left_unit_toFunctor X) b)
-  /-- Composing an operation `f` of arity `b` with the family of identities of arity `b` is
-  `f`. -/
-  id_comp {a : X} {b : T.obj X} (f : hom.app a b) :
-    comp.app f ((mapNullaryId id).app b) =
-      hom.mpRight f (Functor.congr_obj (T.right_unit_toFunctor X) b)
-  /-- Composition is associative: for an operation `h`, a family `g` and a family of families
-  `f`, composing `h ∘ g` with the flattening of `f` agrees with composing `h` with the pointwise
-  composite of `g` and `f` (by `T` applied to `comp`). -/
-  comp_assoc {a : X} {b : T.obj X} {c : T.obj (T.obj X)} {d : T.obj (T.obj (T.obj X))}
-      (h : hom.app a b) (g : (mapProf hom).app b c) (f : (mapProf (mapProf hom)).app c d) :
-    comp.app (comp.app h g) ((μCell hom).app f) =
-      hom.mpRight (comp.app h ((mapBinaryId comp).app g f))
-        (Functor.congr_obj (T.assoc_toFunctor X) d).symm
+/-- A `T`-operad on `X`: operations `hom.app a b` with output `a : X` and arity `b : T X`,
+identities and a composition. -/
+structure Operad (X : Type u) [SmallCategory X] where
+  /-- The operations. -/
+  hom : Profunctor.{u} X (T X)
+  /-- The identities, as a nullary cell. -/
+  ident : Square Profunctor.id hom (𝟭 X) (M.η X)
+  /-- The composition, as a square out of the composite `hom ⊙ T hom`. -/
+  comp : Square (hom.comp (M.mapProf hom)) hom (𝟭 X) (M.μ X)
+  /-- The identity, composed with an operation `f` seen as a family through `η`, is `f`. -/
+  ident_comp {a : X} {b : T X} (f : hom.app a b) :
+    comp.app (compMk (ident.app (𝟙 a)) ((M.ηCell hom).app f)) =
+      hom.mpRight f (Functor.congr_obj (M.left_unit X) b)
+  /-- An operation `f` composed with the family of identities is `f`. -/
+  comp_ident {a : X} {b : T X} (f : hom.app a b) :
+    comp.app (compMk f ((M.mapProf hom).mpLeft (Functor.congr_obj (M.map_id X) b)
+        ((M.mapSquare ident).app ((M.unit X).app (𝟙 b))))) =
+      hom.mpRight f (Functor.congr_obj (M.right_unit X) b)
+  /-- Composition is associative. -/
+  comp_assoc {a : X} {b : T X} {c : T (T X)} {d : T (T (T X))} (h : hom.app a b)
+      (g : (M.mapProf hom).app b c) (f : (M.mapProf (M.mapProf hom)).app c d) :
+    comp.app (compMk (comp.app (compMk h g)) ((M.μCell hom).app f)) =
+      hom.mpRight (comp.app (compMk h ((M.mapProf hom).mpLeft
+          (Functor.congr_obj (M.map_id X) b)
+          ((M.mapSquare comp).app ((M.lax hom (M.mapProf hom)).app (compMk g f))))))
+        (Functor.congr_obj (M.assoc X) d).symm
 
 namespace Operad
 
-variable {T} {X Y Z : Cat.{v, u}}
+variable {M} {X Y Z : Type u} [SmallCategory X] [SmallCategory Y] [SmallCategory Z]
 
-/-- A morphism of `T`-operads: a functor on objects together with a square between the
-profunctors of operations, preserving identities and composition. -/
-structure Hom (M : Operad T X) (N : Operad T Y) where
+/-- The composite of an operation `g` with a family `f` of operations. -/
+abbrev mul (O : Operad M X) {a : X} {b : T X} {c : T (T X)} (g : O.hom.app a b)
+    (f : (M.mapProf O.hom).app b c) : O.hom.app a ((M.μ X).obj c) :=
+  O.comp.app (compMk g f)
+
+/-- The identity operation on `a`. -/
+abbrev unit (O : Operad M X) (a : X) : O.hom.app a ((M.η X).obj a) := O.ident.app (𝟙 a)
+
+/-- A morphism of `T`-operads: a functor together with a square between the profunctors of
+operations, preserving identities and composition. -/
+structure Hom (A : Operad M X) (B : Operad M Y) where
   /-- The action on objects. -/
-  functor : X ⟶ Y
+  functor : X ⥤ Y
   /-- The action on operations. -/
-  map : Square M.hom N.hom functor.toFunctor (T.map functor).toFunctor
-  /-- Identities are preserved, up to the naturality of `η`. -/
-  map_id (a : X) :
-    map.app (M.id.app a) =
-      N.hom.mpRight (N.id.app (functor.toFunctor.obj a))
-        (Functor.congr_obj (T.η_naturality_toFunctor functor) a).symm
-  /-- Composition is preserved, up to the naturality of `μ`. -/
-  map_comp {a : X} {b : T.obj X} {c : T.obj (T.obj X)} (g : M.hom.app a b)
-      (f : (mapProf M.hom).app b c) :
-    map.app (M.comp.app g f) =
-      N.hom.mpRight (N.comp.app (map.app g) ((mapSquare functor (T.map functor) map).app f))
-        (Functor.congr_obj (T.μ_naturality_toFunctor functor) c).symm
+  map : Square A.hom B.hom functor (M.map functor)
+  map_unit (a : X) :
+    map.app (A.unit a) =
+      B.hom.mpRight (B.unit (functor.obj a)) (Functor.congr_obj (M.η_naturality functor) a).symm
+  map_mul {a : X} {b : T X} {c : T (T X)} (g : A.hom.app a b) (f : (M.mapProf A.hom).app b c) :
+    map.app (A.mul g f) =
+      B.hom.mpRight (B.mul (map.app g) ((M.mapSquare map).app f))
+        (Functor.congr_obj (M.μ_naturality functor) c).symm
 
 namespace Hom
 
 /-- The identity morphism of operads. -/
-def id (M : Operad T X) : Hom M M where
-  functor := 𝟙 X
-  map := (Square.id M.hom).cast rfl (T.map_id_toFunctor X).symm
-  map_id a := by simp [Square.cast_app]
-  map_comp g f := by
-    rw [mapSquare_cast (F := 𝟙 X) (G := 𝟙 (T.obj X)), mapSquare_id]
-    simp [Square.cast_app]
+def id (A : Operad M X) : Hom A A where
+  functor := 𝟭 X
+  map := (Square.id A.hom).cast rfl (M.map_id X).symm
+  map_unit a := eq_of_heq ((Square.cast_app_heq _ _ _ _).trans (mpRight_heq _ _ _).symm)
+  map_mul g f := by
+    refine eq_of_heq ((Square.cast_app_heq _ _ _ _).trans (HEq.symm ((mpRight_heq _ _ _).trans ?_)))
+    refine Square.app_compMk_congr A.comp (Functor.congr_obj (M.map_id X) _)
+      (Functor.congr_obj ((congrArg M.map (M.map_id X)).trans (M.map_id (T X))) _)
+      (Square.cast_app_heq _ _ _ _) ?_
+    exact (M.mapSquare_cast_app_heq _ _ _ f).trans (M.mapSquare_id_app_heq _ f)
 
-variable {L : Operad T X} {M : Operad T Y} {N : Operad T Z}
+theorem id_map_app_heq (A : Operad M X) {a : X} {b : T X} (f : A.hom.app a b) :
+    (Hom.id A).map.app f ≍ f :=
+  Square.cast_app_heq (Square.id A.hom) rfl (M.map_id X).symm f
+
+variable {A : Operad M X} {B : Operad M Y} {C : Operad M Z}
 
 /-- The composition of morphisms of operads. -/
-def comp (φ : Hom L M) (ψ : Hom M N) : Hom L N where
-  functor := φ.functor ≫ ψ.functor
-  map := (φ.map.vComp ψ.map).cast rfl (T.map_comp_toFunctor φ.functor ψ.functor).symm
-  map_id a := by simp [Square.cast_app, φ.map_id, ψ.map_id]
-  map_comp g f := by
-    rw [mapSquare_cast (F := φ.functor ≫ ψ.functor) (G := T.map φ.functor ≫ T.map ψ.functor),
-      mapSquare_vComp]
-    simp [Square.cast_app, φ.map_comp, ψ.map_comp]
+def comp (φ : Hom A B) (ψ : Hom B C) : Hom A C where
+  functor := φ.functor ⋙ ψ.functor
+  map := (φ.map.vComp ψ.map).cast rfl (M.map_comp φ.functor ψ.functor).symm
+  map_unit a := by
+    refine eq_of_heq ((Square.cast_app_heq _ _ _ _).trans ?_)
+    refine HEq.trans ?_ (mpRight_heq _ _ _).symm
+    rw [Square.vComp_app, φ.map_unit]
+    refine (Square.app_congr_heq ψ.map (Functor.congr_obj (M.η_naturality φ.functor) a).symm
+      (mpRight_heq _ _ _)).trans ?_
+    rw [ψ.map_unit]
+    exact mpRight_heq _ _ _
+  map_mul g f := by
+    have hL : (φ.map.vComp ψ.map).app (A.mul g f) ≍
+        C.mul (ψ.map.app (φ.map.app g)) ((M.mapSquare ψ.map).app ((M.mapSquare φ.map).app f)) := by
+      rw [Square.vComp_app, φ.map_mul]
+      refine (Square.app_congr_heq ψ.map (Functor.congr_obj (M.μ_naturality φ.functor) _).symm
+        (mpRight_heq _ _ _)).trans ?_
+      rw [ψ.map_mul]
+      exact mpRight_heq _ _ _
+    refine eq_of_heq ((Square.cast_app_heq _ _ _ _).trans
+      (hL.trans (HEq.symm ((mpRight_heq _ _ _).trans ?_))))
+    refine Square.app_compMk_congr C.comp (Functor.congr_obj (M.map_comp _ _) _)
+      (Functor.congr_obj ((congrArg M.map (M.map_comp φ.functor ψ.functor)).trans
+        (M.map_comp _ _)) _) (Square.cast_app_heq _ _ _ _) ?_
+    exact (M.mapSquare_cast_app_heq _ _ _ f).trans (M.mapSquare_vComp_app_heq _ _ f)
+
+theorem comp_map_app_heq (φ : Hom A B) (ψ : Hom B C) {a : X} {b : T X} (f : A.hom.app a b) :
+    (φ.comp ψ).map.app f ≍ ψ.map.app (φ.map.app f) :=
+  Square.cast_app_heq (φ.map.vComp ψ.map) rfl (M.map_comp φ.functor ψ.functor).symm f
+
+theorem ext {φ ψ : Hom A B} (h : φ.functor = ψ.functor)
+    (h' : ∀ {a : X} {b : T X} (f : A.hom.app a b), φ.map.app f ≍ ψ.map.app f) : φ = ψ := by
+  obtain ⟨F, s, _, _⟩ := φ
+  obtain ⟨G, t, _, _⟩ := ψ
+  subst h
+  have : s = t := Square.ext fun f => eq_of_heq (h' f)
+  subst this
+  rfl
 
 end Hom
 
 end Operad
 
-end CategoryTheory
+/-- The category of `T`-operads, over varying small categories of objects. -/
+structure OperadCat where
+  /-- The category of objects. -/
+  X : Type u
+  [cat : SmallCategory X]
+  /-- The operad. -/
+  O : Operad M X
+
+attribute [instance] OperadCat.cat
+
+variable {M}
+
+instance : Category (OperadCat M) where
+  Hom A B := Operad.Hom A.O B.O
+  id A := Operad.Hom.id A.O
+  comp φ ψ := Operad.Hom.comp φ ψ
+  id_comp {A _} φ := Operad.Hom.ext rfl fun f =>
+    (Operad.Hom.comp_map_app_heq _ φ f).trans
+      (Square.app_congr_heq φ.map (Functor.congr_obj (M.map_id A.X) _)
+        (Operad.Hom.id_map_app_heq A.O f))
+  comp_id φ := Operad.Hom.ext rfl fun f =>
+    (Operad.Hom.comp_map_app_heq φ _ f).trans (Operad.Hom.id_map_app_heq _ _)
+  assoc φ ψ χ := Operad.Hom.ext rfl fun f =>
+    ((Operad.Hom.comp_map_app_heq _ χ f).trans
+      (Square.app_congr_heq χ.map (Functor.congr_obj (M.map_comp φ.functor ψ.functor) _)
+        (Operad.Hom.comp_map_app_heq φ ψ f))).trans
+      ((Operad.Hom.comp_map_app_heq φ _ f).trans (Operad.Hom.comp_map_app_heq ψ χ _)).symm
+
+end CategoryTheory.Lax

@@ -1,12 +1,17 @@
 module
 
+public import CategoricalLogic.Examples.EndOperad
+public import CategoricalLogic.FreeMon.Basic
+public import CategoricalLogic.FreeMon.LaxMonad
+public import CategoricalLogic.FreeMon.Prof
+public import CategoricalLogic.LaxMonad
 public import CategoricalLogic.Operad
 public import CategoricalLogic.Profunctor.Basic
 public import CategoricalLogic.Profunctor.Cells
+public import CategoricalLogic.Profunctor.Comp
 public import CategoricalLogic.Profunctor.Product
 public import CategoricalLogic.Profunctor.Square
 -- import CategoricalLogic.Profunctor.Discrete
-public import CategoricalLogic.Term
 public import CategoricalLogic.VirtualDoubleCategory.QuiverSpan
 public import CategoricalLogic.VirtualDoubleCategory.Paths
 public import CategoricalLogic.VirtualDoubleCategory.PathsKleisli
